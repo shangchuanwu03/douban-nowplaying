@@ -1,0 +1,26 @@
+# 默认按文本处理，并让 Git 自行判断二进制
+* text=auto
+
+# Windows 脚本与源码保持 CRLF，避免在记事本/Win 终端里出现异常换行
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+*.cs    text eol=crlf
+*.xaml  text eol=crlf
+
+# Web 与文档统一 LF
+*.js    text eol=lf
+*.json  text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+
+# 二进制
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.exe   binary
+
+# 文档不计入语言统计
+docs/**      linguist-documentation
+screenshots/** linguist-documentation

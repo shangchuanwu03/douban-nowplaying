@@ -1,0 +1,25 @@
+# ---- 个人数据（账号 Cookie / 评分 / 收听史 / 封面缓存 / 日志）----
+# data/ 会在首次运行时自动创建，不需要提交
+data/
+
+# ---- 构建产物 ----
+dist/
+installer/staging/
+installer/payload.zip
+*.exe
+*.dll
+*.pdb
+
+# ---- 依赖与临时文件 ----
+node_modules/
+.tmp-test/
+*.log
+*.tmp
+*.bak
+
+# ---- 编辑器与系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

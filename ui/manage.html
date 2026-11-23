@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>豆瓣正在听 · 管理</title>
+  <style>
+    :root {
+      --base: #e0e5ec;
+      --shadow: #b8bcc2;
+      --highlight: #ffffff;
+      --ink: #3d4451;
+      --dim: #7b8494;
+      --faint: #9aa3b2;
+      --line: #d3dae4;
+      --blurple: #6d5dfc;
+      --mint: #4ecdc4;
+      --coral: #ff6b6b;
+      --raised: 8px 8px 16px #b8bcc2, -8px -8px 16px #ffffff;
+      --raised-sm: 4px 4px 8px #b8bcc2, -4px -4px 8px #ffffff;
+      --recessed: inset 5px 5px 10px #c3cad5, inset -5px -5px 10px #f2f5f9;
+      --recessed-sm: inset 3px 3px 6px #c3cad5, inset -3px -3px 6px #f2f5f9;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--base);
+      color: var(--ink);
+      font-family: "Inter", "Segoe UI Variable Text", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 32px 36px 56px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+    h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+    h1 span { color: var(--blurple); }
+    .sub { color: var(--faint); font-size: 12px; }
+
+    /* 分段控件：凹陷轨道 + 凸起选中块 */
+    .tabs {
+      display: inline-flex; gap: 4px; padding: 5px; margin-bottom: 24px;
+      background: var(--base); border-radius: 16px; box-shadow: var(--recessed-sm);
+    }
+    .tab {
+      border: 0; background: transparent; color: var(--dim); font-family: inherit;
+      font-size: 13px; font-weight: 500; padding: 8px 18px; border-radius: 12px;
+      cursor: pointer; transition: color .18s ease, box-shadow .18s ease;
+    }
+    .tab:hover { color: var(--ink); }
+    .tab.on { color: var(--ink); background: var(--base); box-shadow: var(--raised-sm); }
+    .panel { display: none; }
+    .panel.on { display: block; }
+
+    .card {
+      background: var(--base); border-radius: 24px; box-shadow: var(--raised);
+      padding: 8px 24px;
+    }
+
+    .row { display: flex; align-items: center; gap: 16px; padding: 14px 8px; }
+    .row + .row { border-top: 1px solid var(--line); }
+    .thumb {
+      width: 48px; height: 48px; border-radius: 14px; object-fit: cover;
+      background: var(--base); box-shadow: var(--recessed-sm); flex: 0 0 48px;
+    }
+    .grow { flex: 1; min-width: 0; }
+    .t { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .s { font-size: 12px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .num { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .stars { color: var(--blurple); font-size: 13px; letter-spacing: 2px; white-space: nowrap; }
+    .stars .off { color: #c3c9d3; }
+    .muted { color: var(--faint); font-size: 12px; }
+
+    .field { margin-bottom: 20px; }
+    label { display: block; font-size: 12px; font-weight: 500; color: var(--dim); margin-bottom: 8px; }
+    textarea, input[type="text"] {
+      width: 100%; background: var(--base); border: 0; border-radius: 16px;
+      box-shadow: var(--recessed); color: var(--ink); font-family: inherit;
+      font-size: 13px; padding: 14px 16px; outline: none; transition: box-shadow .18s ease;
+    }
+    textarea { min-height: 88px; resize: vertical; line-height: 1.6; }
+    textarea:focus, input:focus { box-shadow: inset 5px 5px 10px #c3cad5, inset -5px -5px 10px #e6ebf2, 0 0 0 2px rgba(109,93,252,.35); }
+    ::placeholder { color: var(--faint); }
+
+    .btn {
+      border: 0; border-radius: 16px; padding: 10px 20px; font-family: inherit;
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: box-shadow .18s ease, transform .08s ease;
+      background: var(--blurple); color: #fff; box-shadow: 4px 4px 10px #b8bcc2, -4px -4px 10px #ffffff;
+    }
+    .btn:hover { box-shadow: 2px 2px 5px #b8bcc2, -2px -2px 5px #ffffff; }
+    .btn:active { box-shadow: inset 4px 4px 8px rgba(0,0,0,.18); transform: none; }
+    .btn.ghost { background: var(--base); color: var(--ink); }
+    .btn.ghost:active { box-shadow: var(--recessed-sm); }
+    .btn:disabled { opacity: .55; cursor: default; }
+    .help { font-size: 12px; color: var(--faint); line-height: 1.8; margin-top: 10px; }
+    .help code { background: var(--base); box-shadow: var(--recessed-sm); padding: 1px 6px; border-radius: 6px; font-size: 11px; }
+    .search-line { display: flex; gap: 12px; margin-bottom: 20px; }
+    .result { display: flex; align-items: center; gap: 16px; padding: 12px 8px; border-radius: 16px; }
+    .result + .result { border-top: 1px solid var(--line); }
+    .empty { color: var(--faint); font-size: 13px; padding: 40px 0; text-align: center; }
+    .toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+      background: var(--base); color: var(--ink); border-radius: 16px;
+      padding: 12px 20px; font-size: 13px; box-shadow: var(--raised);
+      opacity: 0; transition: opacity .25s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>豆瓣<span>正在听</span> · 管理</h1>
+    <div class="sub" id="statusLine">本地服务已连接</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab on" data-panel="history">收听史</button>
+    <button class="tab" data-panel="bind">手动绑定</button>
+    <button class="tab" data-panel="settings">设置</button>
+  </nav>
+
+  <section class="panel on" id="panel-history">
+    <div class="card"><div id="historyList"><div class="empty">还没有收听记录</div></div></div>
+  </section>
+
+  <section class="panel" id="panel-bind">
+    <div class="search-line">
+      <input type="text" id="q" placeholder="输入专辑名或艺人，例如：叶惠美 周杰伦" />
+      <button class="btn" id="btnSearch">搜索</button>
+    </div>
+    <div class="card"><div id="results"><div class="empty">搜索豆瓣音乐，把当前播放的专辑绑到正确的条目上</div></div></div>
+  </section>
+
+  <section class="panel" id="panel-settings">
+    <div class="card" style="padding:24px">
+    <div class="field">
+      <label>豆瓣登录 Cookie（用于把评分写回豆瓣）</label>
+      <textarea id="cookie" placeholder="bid=xxxx; dbcl2=xxxx"></textarea>
+      <div class="help">
+        在浏览器里登录豆瓣后按 <code>F12</code> → 应用/Application → Cookie → <code>https://music.douban.com</code>，
+        复制 <code>bid</code> 和 <code>dbcl2</code> 两个值，拼成 <code>bid=…; dbcl2=…</code> 即可。<br />
+        只保存在本机 <code>data/db.json</code>，不会上传到任何地方。
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="btn" id="btnSave">保存</button>
+      <span class="muted" id="saveHint"></span>
+    </div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+
+    function toast(msg) {
+      $('toast').textContent = msg;
+      $('toast').classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => $('toast').classList.remove('show'), 2400);
+    }
+
+    function stars(n) {
+      let s = '';
+      for (let i = 1; i <= 5; i++) s += `<span class="${i <= n ? '' : 'off'}">★</span>`;
+      return s;
+    }
+
+    function ago(ts) {
+      const d = Date.now() - ts;
+      const m = Math.floor(d / 60000);
+      if (m < 1) return '刚刚';
+      if (m < 60) return m + ' 分钟前';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + ' 小时前';
+      return Math.floor(h / 24) + ' 天前';
+    }
+
+    // 标签切换
+    document.querySelectorAll('.tab').forEach((t) => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
+        document.querySelectorAll('.panel').forEach((p) =>
+          p.classList.toggle('on', p.id === 'panel-' + t.dataset.panel)
+        );
+      });
+    });
+
+    async function loadHistory() {
+      try {
+        const [h, r] = await Promise.all([
+          fetch('/api/history?limit=100').then((x) => x.json()),
+          fetch('/api/ratings').then((x) => x.json()),
+        ]);
+        const ratingMap = new Map((r.items || []).map((x) => [String(x.subjectId), x]));
+        const items = h.items || [];
+        if (!items.length) {
+          $('historyList').innerHTML = '<div class="empty">还没有收听记录</div>';
+          return;
+        }
+        $('historyList').innerHTML = items
+          .map((it) => {
+            const mine = ratingMap.get(String(it.subjectId));
+            const cover = it.cover
+              ? `<img class="thumb" src="/api/cover?u=${encodeURIComponent(it.cover)}" onerror="this.style.visibility='hidden'">`
+              : '<div class="thumb"></div>';
+            return `<div class="row">
+              ${cover}
+              <div class="grow">
+                <div class="t">${escapeHtml(it.title || '未知')}</div>
+                <div class="s">${escapeHtml(it.artist || '')}${it.date ? ' · ' + escapeHtml(it.date.slice(0, 4)) : ''} · ${ago(it.startedAt)}</div>
+              </div>
+              <div class="stars">${mine ? stars(mine.rating || 0) : '<span class="off">未评分</span>'}</div>
+            </div>`;
+          })
+          .join('');
+      } catch (e) {
+        $('historyList').innerHTML = '<div class="empty">读取失败：' + e.message + '</div>';
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+
+    async function doSearch() {
+      const q = $('q').value.trim();
+      if (!q) return;
+      $('results').innerHTML = '<div class="empty">搜索中…</div>';
+      try {
+        const j = await fetch('/api/search?q=' + encodeURIComponent(q)).then((x) => x.json());
+        const items = j.items || [];
+        if (!items.length) {
+          $('results').innerHTML = '<div class="empty">没有结果</div>';
+          return;
+        }
+        $('results').innerHTML = items
+          .map(
+            (it, i) => `<div class="result">
+              ${it.cover ? `<img class="thumb" src="/api/cover?u=${encodeURIComponent(it.cover)}">` : '<div class="thumb"></div>'}
+              <div class="grow">
+                <div class="t">${escapeHtml(it.title)}</div>
+                <div class="s">${escapeHtml(it.raw || '')}</div>
+              </div>
+              <div class="num">${it.score ? it.score.toFixed(1) : '—'}</div>
+              <button class="btn ghost" data-id="${it.id}">绑定</button>
+            </div>`
+          )
+          .join('');
+        $('results').querySelectorAll('button[data-id]').forEach((b) => {
+          b.addEventListener('click', async () => {
+            b.disabled = true;
+            b.textContent = '绑定中';
+            const res = await fetch('/api/pick', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ subjectId: Number(b.dataset.id) }),
+            });
+            const j2 = await res.json();
+            if (j2.ok) { b.textContent = '已绑定'; toast('已绑定，悬浮窗会立刻更新'); }
+            else { b.disabled = false; b.textContent = '绑定'; toast(j2.error || '失败'); }
+          });
+        });
+      } catch (e) {
+        $('results').innerHTML = '<div class="empty">搜索失败：' + e.message + '</div>';
+      }
+    }
+
+    async function loadSettings() {
+      try {
+        const s = await fetch('/api/settings').then((x) => x.json());
+        $('cookie').value = s.doubanCookie === '已设置' ? '' : s.doubanCookie || '';
+        $('cookie').placeholder = s.doubanCookie === '已设置' ? '已设置（留空则不修改）' : 'bid=xxxx; dbcl2=xxxx';
+        $('statusLine').textContent = s.doubanCookie === '已设置' ? '已配置豆瓣登录' : '未配置豆瓣登录（只读评分，无法回写）';
+      } catch { /* ignore */ }
+    }
+
+    $('btnSearch').addEventListener('click', doSearch);
+    $('q').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+    $('btnSave').addEventListener('click', async () => {
+      const v = $('cookie').value.trim();
+      if (!v) { toast('请填入 Cookie'); return; }
+      $('btnSave').disabled = true;
+      try {
+        const r = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doubanCookie: v }),
+        });
+        const j = await r.json();
+        toast(j.ok ? '已保存' : '保存失败');
+        $('saveHint').textContent = j.ok ? '已保存到本机' : '';
+        loadSettings();
+      } catch (e) {
+        toast('保存失败：' + e.message);
+      }
+      $('btnSave').disabled = false;
+    });
+
+    loadHistory();
+    loadSettings();
+
+    // 从悬浮窗带过来的搜索词，自动切到绑定页
+    if (params.get('bind')) {
+      document.querySelector('[data-panel="bind"]').click();
+      $('q').value = params.get('bind');
+      doSearch();
+    }
+  </script>
+</body>
+</html>

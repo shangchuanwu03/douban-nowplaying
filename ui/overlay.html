@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>豆瓣正在听</title>
+  <link rel="stylesheet" href="./overlay.css" />
+</head>
+<body>
+  <div class="stage" id="stage" data-mode="idle">
+    <article class="card" id="card">
+      <header class="top">
+        <div class="source">
+          <span class="pulse"></span>
+          <span id="appName">等待播放</span>
+        </div>
+        <div class="top-right">
+          <span class="status" id="statusText"></span>
+          <button class="icon-btn" id="btnManage" title="历史与设置">⋯</button>
+        </div>
+      </header>
+
+      <section class="body">
+        <div class="cover-shell">
+          <img class="cover" id="cover" alt="" />
+          <div class="cover-fallback" id="coverFallback"><span id="coverLetter">♪</span></div>
+        </div>
+
+        <div class="meta">
+          <h1 class="album" id="albumTitle">还没有在放歌</h1>
+          <p class="artist" id="artistLine">打开 Apple Music 放一张专辑试试</p>
+
+          <div class="score-block" id="scoreBlock">
+            <div class="score-line">
+              <div class="db-score">
+                <span class="num" id="scoreNum">--</span>
+                <span class="unit">/ 10</span>
+              </div>
+              <div class="score-side">
+                <div class="stars" id="dstars"></div>
+                <div class="votes" id="votesLine"></div>
+              </div>
+            </div>
+            <div class="dist" id="dist"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mine" id="mine">
+        <span class="mine-label">我的</span>
+        <div class="my-stars" id="myStars"></div>
+        <input class="comment" id="comment" maxlength="140" placeholder="写句短评…" />
+        <button class="sync" id="btnSync" title="把评分和短评写到豆瓣">同步</button>
+      </section>
+
+      <div class="hint-row" id="hintRow"></div>
+      <div class="progress"><i id="progressBar"></i></div>
+    </article>
+
+    <div class="toast" id="toast"></div>
+  </div>
+  <script src="./overlay.js"></script>
+</body>
+</html>

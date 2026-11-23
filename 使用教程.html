@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>豆瓣正在听 · 使用教程</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 48px 20px 96px;
+    background: radial-gradient(1200px 600px at 20% -10%, #16263f 0%, #0b1322 55%, #080e19 100%);
+    color: #dfe8f5;
+    font: 16px/1.75 "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 30px; color: #e4b863; margin: 0 0 8px; letter-spacing: .5px; }
+  h2 { font-size: 21px; margin: 44px 0 12px; padding-top: 20px; border-top: 1px solid #1d2c44; color: #fff; }
+  h3 { font-size: 17px; margin: 26px 0 8px; color: #cfe0f5; }
+  p { margin: 10px 0; color: #c7d8ec; }
+  strong { color: #fff; }
+  code { background: #16233a; border: 1px solid #24344f; border-radius: 6px; padding: 1px 6px; font-size: 13px; color: #e4b863; }
+  blockquote { margin: 14px 0; padding: 10px 16px; border-left: 3px solid #e4b863; background: #101c30; color: #9fb6d2; border-radius: 0 10px 10px 0; }
+  hr { border: 0; border-top: 1px solid #1d2c44; margin: 32px 0; }
+  ul, ol { margin: 10px 0 10px 22px; padding: 0; color: #c7d8ec; }
+  pre { background: #0d1727; border: 1px solid #22314a; border-radius: 10px; padding: 14px 16px; overflow-x: auto; }
+  pre code { background: none; border: 0; padding: 0; color: #b9d0ea; font-size: 13px; }
+  li { margin: 5px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  th, td { border: 1px solid #22314a; padding: 9px 12px; text-align: left; }
+  th { background: #101c30; color: #9fb6d2; font-weight: 600; }
+  td { color: #c7d8ec; }
+  .shot { text-align: center; margin: 18px 0; }
+  .shot img { max-width: 100%; border-radius: 14px; border: 1px solid #22314a; box-shadow: 0 12px 30px rgba(0,0,0,.45); }
+</style>
+</head>
+<body>
+<main>
+<h1>使用教程</h1>
+<blockquote>5 分钟看完，就能用起来。</blockquote>
+<hr>
+<h2>一、启动</h2>
+<p>双击 <strong><code>启动.bat</code></strong>（或桌面快捷方式「豆瓣正在听」）。</p>
+<p>浮窗出现在屏幕<strong>右下角</strong>，本地服务会自动在后台跑起来。默认「自动识别」——谁在放歌就认谁（Apple Music / Spotify / 网易云 / QQ 音乐）。</p>
+<p class="shot"><img src="screenshots/02-悬浮窗实拍.png" width="460" alt=""></p>
+<p><strong>退出</strong>：在浮窗上右键 → 退出。 <strong>管理</strong>：点浮窗右上角的 <strong>⋯</strong>，或双击 <code>管理.bat</code>。</p>
+<blockquote>小提示：浮窗可以拖着走——按住顶栏或封面拖动即可。Ctrl+滚轮能缩放。</blockquote>
+<hr>
+<h2>二、第一次使用：绑定豆瓣（只做一次）</h2>
+<p>没有豆瓣账号也能看评分，但<strong>要给专辑打分并同步回豆瓣，必须先绑定</strong>。</p>
+<ol><li>打开管理窗口 → <strong>设置</strong> 标签 → 点 <strong>「打开豆瓣」</strong></li><li>在浏览器里登录豆瓣（登录过的可以跳过）</li><li>按 <strong>F12</strong> → <strong>网络 / Network</strong> 标签 → 刷新页面</li><li>点任意一个 <code>douban.com</code> 请求 → <strong>标头 / Headers</strong> → 找到 <code>Cookie</code>，右键「复制值」</li><li>回到设置窗口 → 点 <strong>「从剪贴板读取」</strong></li></ol>
+<p class="shot"><img src="screenshots/06-账号绑定.png" width="520" alt=""></p>
+<p>成功后右上角会显示 <strong>「已绑定：你的昵称」</strong>。</p>
+<hr>
+<h2>三、导入你「听过」的评分（建议做一次）</h2>
+<p>绑定完，点 <strong>设置 → 「导入我在豆瓣听过的评分 →」</strong>。</p>
+<p>它会把你豆瓣上已有的星级和短评全部拉进来（约 1700 张，2–3 分钟）。</p>
+<p>导入过的专辑，浮窗会直接显示你当年打的分和写的短评，按钮是 <strong>「已同步」</strong>——不会误覆盖。</p>
+<blockquote>中途关掉也没事，下次会从断点继续。</blockquote>
+<hr>
+<h2>四、日常使用</h2>
+<p>在 Apple Music / Spotify / 网易云 / QQ 音乐里播放一张专辑，浮窗会在 2–4 秒后自动出现豆瓣信息。</p>
+<p><strong>浮窗上每一块是什么：</strong></p>
+<table><thead><tr><th>位置</th><th>内容</th></tr></thead><tbody><tr><td>左上角</td><td>播放器名 · 当前曲目（如 <code>Spotify · 24시간이 모자라</code>）</td></tr><tr><td>右上角</td><td>播放状态 + 「⋯」菜单</td></tr><tr><td>封面右侧</td><td>专辑名、艺人 · 年份 · 流派</td></tr><tr><td>大数字</td><td>豆瓣评分，右边是豆瓣星级和评价人数</td></tr><tr><td>金色横条</td><td>评分分布（几星各占多少）</td></tr><tr><td>我的</td><td>你自己打的星</td></tr></tbody></table>
+<p class="shot"><img src="screenshots/02-悬浮窗实拍.png" width="470" alt=""></p>
+<p><strong>打分</strong>：点「我的」那排星星（1–5 星） <strong>写评语</strong>：星星下方那行输入框，输入完按回车或用鼠标点别处就保存 <strong>同步</strong>：点 <strong>「同步」</strong>，这张专辑就进了你豆瓣的「听过」</p>
+<p class="shot"><img src="screenshots/10-新界面布局.png" width="440" alt=""></p>
+<hr>
+<h2>五、没空打分？用「稍后再评」</h2>
+<p>点 <strong>「稍后再评」</strong>，这张专辑就进了 <strong>管理 → 待评分</strong>。</p>
+<p>以后在待评分里：</p>
+<ul>
+<li><strong>点星打分</strong> + 写评语</li>
+<li>点 <strong>「同步」</strong> 写入豆瓣，成功后自动从列表消失</li>
+<li>不想评了点 <strong>「移除」</strong></li>
+</ul>
+<p class="shot"><img src="screenshots/09-待评分同步.png" width="620" alt=""></p>
+<hr>
+<h2>六、设置里能改什么</h2>
+<p>打开 <strong>管理 → 设置</strong>：</p>
+<table><thead><tr><th>设置项</th><th>说明</th></tr></thead><tbody><tr><td><strong>播放器</strong></td><td>自动 / Apple Music / Spotify / 网易云 / QQ 音乐。选「自动」= 谁在播就认谁；指定后只认这一个</td></tr><tr><td><strong>界面皮肤</strong></td><td>新拟物（浅色）/ 玻璃拟态（深色）</td></tr><tr><td><strong>豆瓣账号</strong></td><td>打开豆瓣、从剪贴板读取、解除绑定、导入听过的评分</td></tr></tbody></table>
+<p class="shot"><img src="screenshots/11-播放器来源.png" width="560" alt=""></p>
+<hr>
+<h2>七、豆瓣没找到这张专辑？</h2>
+<p>浮窗会显示 <strong>「豆瓣没找到这张 · 右键「手动绑定」」</strong>。这时：</p>
+<ol><li>右键浮窗 → <strong>历史与设置…</strong>（或点 ⋯ → 历史与设置）</li><li>切到 <strong>手动绑定</strong> 标签</li><li>输入专辑名搜索 → 在结果里找对的那张 → 点 <strong>绑定</strong></li></ol>
+<p>搜索结果按<strong>评价人数从多到少</strong>排列，下面标着人数（<code>7.8 万人</code> / <code>4624 人</code>），一般第一个就是你要的。</p>
+<p class="shot"><img src="screenshots/15-搜索按人数排序.png" width="620" alt=""></p>
+<p>绑定之后，这张专辑以后都会直接认出来，不用再绑。</p>
+<hr>
+<h2>八、常见问题</h2>
+<p><strong>Q：浮窗一直显示「等待播放」？</strong> 确认播放器真的在放歌（不是暂停）。再看 <strong>设置 → 播放器</strong> 是不是被限定成了别的播放器。</p>
+<p><strong>Q：网易云 / QQ 音乐没反应？</strong> 双击 <strong><code>检查播放器.bat</code></strong>，它会列出系统当前检测到的播放器，并直接告诉你「会被识别 ✅」还是「不会 ❌ + 原因」。</p>
+<p><strong>Q：点同步提示「没拿到 ck 令牌」？</strong> 豆瓣登录状态可能失效了，重新做一次<strong>第二步</strong>。</p>
+<p><strong>Q：提示「豆瓣没找到这张」但专辑明明有？</strong> 豆瓣在限流（短时间请求太多）。等 10–30 分钟会自动恢复，不用重启。</p>
+<p><strong>Q：点了 ⋯ 没反应？</strong> 右键浮窗任意位置，效果一样。</p>
+<p><strong>Q：同步到豆瓣后落在「在听」而不是「听过」？</strong> 旧版本的问题，现在已修。如果还有，把豆瓣账号重新绑定一次。</p>
+<hr>
+<h2>九、几个快捷操作</h2>
+<table><thead><tr><th>操作</th><th>效果</th></tr></thead><tbody><tr><td>顶栏 / 封面拖动</td><td>移动浮窗</td></tr><tr><td>Ctrl + 滚轮</td><td>放大 / 缩小浮窗</td></tr><tr><td>右键浮窗</td><td>打开菜单（历史与设置 / 待评分 / 写评分 / 置顶 / 缩放 / 退出）</td></tr><tr><td>管理窗口按 Esc</td><td>关闭</td></tr><tr><td><code>--settings</code> 启动参数</td><td>直接打开管理窗口</td></tr></tbody></table>
+<hr>
+<p>需要更详细的技术说明，看 <code>README.md</code> 和 <code>docs/项目说明.md</code>。</p>
+</main>
+</body>
+</html>
