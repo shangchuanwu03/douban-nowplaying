@@ -936,15 +936,22 @@ const server = http.createServer(async (req, res) => {
       const subjectId = Number(body.subjectId);
       const rec = store.getRating(subjectId);
       if (!rec) return json(res, 400, { ok: false, error: '本地还没有这张的评分' });
-      if (!rec.rating) return json(res, 400, { ok: false, error: '请先给 1-5 星' });
+
+      // 优先用请求里带的值（界面刚输入、可能还没落盘），没有再退回本地记录
+      const rating = Number(body.rating) || rec.rating || 0;
+      const comment = typeof body.comment === 'string' ? body.comment : (rec.comment || '');
+      if (!rating) return json(res, 400, { ok: false, error: '请先给 1-5 星' });
+
+      // 同步前把这份内容固化到本地，避免"豆瓣有分本地没评语"
+      store.setRating(subjectId, { rating, comment, synced: false });
 
       const cookie = store.getSettings().doubanCookie;
       douban.setUserCookie(cookie);
       try {
         const out = await douban.postInterest({
           subjectId,
-          rating: rec.rating,
-          comment: rec.comment || '',
+          rating,
+          comment,
           cookie,
         });
         const ok = out.status === 200 && (!out.json || out.json.r === 0 || out.json.r === undefined);

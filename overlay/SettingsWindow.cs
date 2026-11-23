@@ -1242,7 +1242,13 @@ namespace DoubanNowPlaying
                         await _http.PostAsync("/api/rating",
                             new StringContent(save, Encoding.UTF8, "application/json"));
 
-                        var sync = ser.Serialize(new Dictionary<string, object> { { "subjectId", subjectId } });
+                        // 连评语一起带上，服务端不必再读一遍本地记录
+                        var sync = ser.Serialize(new Dictionary<string, object>
+                        {
+                            { "subjectId", subjectId },
+                            { "rating", chosen },
+                            { "comment", commentBox.Text ?? "" }
+                        });
                         var resp = await _http.PostAsync("/api/sync",
                             new StringContent(sync, Encoding.UTF8, "application/json"));
                         var text = await resp.Content.ReadAsStringAsync();

@@ -1241,12 +1241,41 @@ namespace DoubanNowPlaying
         async Task SyncAsync()
         {
             if (!_subjectId.HasValue || _syncing) return;
+            var subjectId = _subjectId.Value;
+            var rating = _myRating;
+            var comment = _comment.Text ?? "";
+
+            if (rating <= 0)
+            {
+                ShowHint("先点星打个分再同步", Coral);
+                return;
+            }
+
             SetSyncState(false, true);
             try
             {
-                var body = "{\"subjectId\":" + _subjectId.Value + "}";
+                // 关键：先把「星 + 评语」明确写进本地，再带着它们同步。
+                // 只发 subjectId 的话，服务端读到的可能是还没保存的旧记录
+                //（点同步会让评论框失焦，保存请求和同步请求会抢跑，评语就丢了）。
+                var save = new Dictionary<string, object>
+                {
+                    { "subjectId", subjectId },
+                    { "rating", rating },
+                    { "comment", comment }
+                };
+                await PostJsonAsync("/api/rating", save);
+                _commentDirty = false;
+                _commentSubjectId = subjectId;
+
+                var payload = new Dictionary<string, object>
+                {
+                    { "subjectId", subjectId },
+                    { "rating", rating },
+                    { "comment", comment }
+                };
+                var json = new JavaScriptSerializer().Serialize(payload);
                 var resp = await _http.PostAsync("/api/sync",
-                    new StringContent(body, Encoding.UTF8, "application/json"));
+                    new StringContent(json, Encoding.UTF8, "application/json"));
                 var text = await resp.Content.ReadAsStringAsync();
                 bool ok = text.Contains("\"ok\":true");
                 if (ok)
