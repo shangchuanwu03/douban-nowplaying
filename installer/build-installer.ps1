@@ -23,6 +23,7 @@ $out = Join-Path $dist '豆瓣正在听-安装包.exe'
 # --- 打进安装包的文件清单（相对项目根目录） --------------------------------
 $files = @(
     'douban-overlay.exe',
+    'package.json',
     'README.md',
     '使用教程.md',
     '使用教程.html',

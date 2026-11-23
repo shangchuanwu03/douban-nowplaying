@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -196,7 +196,12 @@ namespace DoubanNowPlaying
 
             if (Program.OpenSettingsRequested)
             {
-                _win.Loaded += (s2, e2) => SettingsWindow.ShowSingleton();
+                // 窗口在 LoadUi() 里就已经 Show 了，Loaded 可能早就过去；
+                // 直接挂 Loaded 会时灵时不灵（管理.bat 打不开设置就是这么来的）。
+                // 排到消息队列里，等窗口真正显示出来再开设置页。
+                _win.Dispatcher.BeginInvoke(
+                    new Action(() => SettingsWindow.ShowSingleton()),
+                    System.Windows.Threading.DispatcherPriority.Background);
             }
 
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
@@ -1458,6 +1463,12 @@ namespace DoubanNowPlaying
                 _homeLeft = double.NaN;
                 _homeBottom = _win.Top + _win.ActualHeight;
             };
+        }
+
+        /// <summary>检查更新时用：关掉本地服务并退出，好让安装包覆盖 exe</summary>
+        public void ExitForUpdate()
+        {
+            Shutdown();
         }
 
         void Shutdown()

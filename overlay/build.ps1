@@ -11,6 +11,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $src = Join-Path $root 'overlay\Overlay.cs'
 $src2 = Join-Path $root 'overlay\SettingsWindow.cs'
+$src3 = Join-Path $root 'overlay\Updater.cs'
 $out = Join-Path $root 'douban-overlay.exe'
 
 $cscCandidates = @(
@@ -73,7 +74,7 @@ $cscArgs = @(
     '/nowarn:1591',
     "/win32icon:$iconPath",
     "/out:$out"
-) + $refs + @($src, $src2)
+) + $refs + @($src, $src2, $src3)
 
 Write-Host "compiling $src"
 & $csc @cscArgs

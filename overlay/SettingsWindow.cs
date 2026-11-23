@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -120,6 +120,12 @@ namespace DoubanNowPlaying
         TextBlock _statusLine, _saveHint, _btnSaveText;
         string _cookiePlaceholder = "bid=xxxx; dbcl2=xxxx";
 
+        // 版本与更新
+        Border _btnCheckUpdate, _btnApplyUpdate;
+        TextBlock _btnCheckUpdateText, _btnApplyUpdateText, _updateHint, _updateNotes;
+        Updater.ReleaseInfo _pendingUpdate;
+        bool _updateBusy;
+
         void Open()
         {
             _http = new HttpClient { BaseAddress = new Uri(BaseUrl), Timeout = TimeSpan.FromSeconds(15) };
@@ -204,6 +210,17 @@ namespace DoubanNowPlaying
             _btnImport = (Border)_win.FindName("BtnImport");
             _importHint = (TextBlock)_win.FindName("ImportHint");
             if (_btnImport != null) _btnImport.MouseLeftButtonUp += (s, e) => ImportCollection();
+
+            _btnCheckUpdate = (Border)_win.FindName("BtnCheckUpdate");
+            _btnCheckUpdateText = (TextBlock)_win.FindName("BtnCheckUpdateText");
+            _btnApplyUpdate = (Border)_win.FindName("BtnApplyUpdate");
+            _btnApplyUpdateText = (TextBlock)_win.FindName("BtnApplyUpdateText");
+            _updateHint = (TextBlock)_win.FindName("UpdateHint");
+            _updateNotes = (TextBlock)_win.FindName("UpdateNotes");
+
+            if (_btnCheckUpdate != null) _btnCheckUpdate.MouseLeftButtonUp += async (s, e) => await CheckUpdateAsync();
+            if (_btnApplyUpdate != null) _btnApplyUpdate.MouseLeftButtonUp += async (s, e) => await ApplyUpdateAsync();
+            if (_updateHint != null) _updateHint.Text = "当前版本 v" + Updater.LocalVersion();
 
             _tabHistory.MouseLeftButtonUp += (s, e) => SwitchTab("history");
             if (_tabTodo != null) _tabTodo.MouseLeftButtonUp += (s, e) => SwitchTab("todo");
@@ -549,6 +566,109 @@ namespace DoubanNowPlaying
             {
                 _saveHint.Text = "解绑失败：" + ex.Message;
             }
+        }
+
+        /* -------------------------------- 更新 -------------------------------- */
+
+        /// <summary>点「检查更新」：走 GitHub 的公开 release 接口，只读，不发任何本机信息。</summary>
+        async System.Threading.Tasks.Task CheckUpdateAsync()
+        {
+            if (_updateBusy || _updateHint == null) return;
+            _updateBusy = true;
+            _updateHint.Text = "正在检查…";
+            if (_btnApplyUpdate != null) _btnApplyUpdate.Visibility = Visibility.Collapsed;
+            if (_updateNotes != null) _updateNotes.Visibility = Visibility.Collapsed;
+            SetUpdateButtonBusy(true);
+
+            try
+            {
+                var rel = await Updater.CheckAsync();
+                _pendingUpdate = rel.HasUpdate ? rel : null;
+
+                if (rel.HasUpdate)
+                {
+                    _updateHint.Text = "发现新版本 v" + rel.Latest + "（当前 v" + rel.Current + "）"
+                                       + (string.IsNullOrEmpty(rel.SizeText) ? "" : " · " + rel.SizeText);
+                    if (_updateNotes != null && !string.IsNullOrEmpty(rel.Notes))
+                    {
+                        _updateNotes.Text = rel.Notes;
+                        _updateNotes.Visibility = Visibility.Visible;
+                    }
+                    if (_btnApplyUpdate != null) _btnApplyUpdate.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    _updateHint.Text = "已是最新版本（v" + rel.Current + "）";
+                }
+            }
+            catch (Exception ex)
+            {
+                _pendingUpdate = null;
+                _updateHint.Text = "检查失败：" + ex.Message;
+            }
+            finally
+            {
+                SetUpdateButtonBusy(false);
+                _updateBusy = false;
+            }
+        }
+
+        /// <summary>
+        /// 点「立即更新」：下载安装包 → 交给独立进程等本程序退出后静默覆盖安装 → 自己退出。
+        /// 覆盖装回同一目录，data/ 里的评分和账号不会动。
+        /// </summary>
+        async System.Threading.Tasks.Task ApplyUpdateAsync()
+        {
+            if (_updateBusy || _pendingUpdate == null) return;
+            _updateBusy = true;
+            SetUpdateButtonBusy(true, "下载中…");
+            if (_btnApplyUpdate != null) _btnApplyUpdate.IsEnabled = false;
+
+            var dest = Path.Combine(Path.GetTempPath(),
+                "DoubanNowPlaying-" + _pendingUpdate.Latest + "-Setup.exe");
+
+            try
+            {
+                _updateHint.Text = "正在下载 v" + _pendingUpdate.Latest + "…";
+                int lastShown = -1;
+                await Updater.DownloadAsync(_pendingUpdate, dest, (done, total) =>
+                {
+                    // 回调本身就在 UI 线程上，直接改文案即可；只在百分比变化时刷新
+                    if (total <= 0 || _updateHint == null) return;
+                    int pct = (int)(done * 100 / total);
+                    if (pct == lastShown) return;
+                    lastShown = pct;
+                    _updateHint.Text = "正在下载 v" + _pendingUpdate.Latest + "… " + pct + "%";
+                });
+
+                _updateHint.Text = "下载完成，正在退出并覆盖安装…";
+                Updater.ScheduleInstall(dest, Process.GetCurrentProcess().Id);
+
+                await System.Threading.Tasks.Task.Delay(700);
+
+                if (_win != null) _win.Close();
+                if (Overlay.Current != null) Overlay.Current.ExitForUpdate();
+                else Application.Current.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                _updateHint.Text = "更新失败：" + ex.Message;
+                if (_btnApplyUpdate != null) _btnApplyUpdate.IsEnabled = true;
+                SetUpdateButtonBusy(false);
+                _updateBusy = false;
+                try
+                {
+                    if (File.Exists(dest)) File.Delete(dest);
+                }
+                catch { }
+            }
+        }
+
+        void SetUpdateButtonBusy(bool busy, string label = null)
+        {
+            if (_btnCheckUpdate != null) _btnCheckUpdate.IsEnabled = !busy;
+            if (_btnCheckUpdateText != null)
+                _btnCheckUpdateText.Text = busy ? (label ?? "检查中…") : "检查更新";
         }
 
         /* -------------------------------- 皮肤 -------------------------------- */

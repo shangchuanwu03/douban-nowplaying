@@ -1,6 +1,6 @@
 {
   "name": "douban-nowplaying",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "private": true,
   "description": "实时识别正在播放的专辑，展示豆瓣评分，并把你的评分与短评写回豆瓣",
   "scripts": {

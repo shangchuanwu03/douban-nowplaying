@@ -2,9 +2,22 @@
 
 项目：豆瓣正在听（Douban Now Playing）
 路径：`<项目根目录>`
-最新版本：**v1.5.4**（2026-11-23）
+最新版本：**v1.5.5**（2026-11-23）
 
 > 版本号只体现在安装包注册表的 `DisplayVersion`（`installer/Setup.cs`），源码本身不带版本常量。
+
+---
+
+## v1.5.5 — 2026-11-23 21:4x
+
+**设置页接入 GitHub 检查更新**
+
+- 新增 `overlay/Updater.cs`：读 GitHub release → 比对版本 → 下载安装包 → 退出后覆盖安装 → 装完重启
+- 设置页底部新增「版本与更新」：当前版本 / 检查更新 / 立即更新，新拟物与玻璃拟态两套皮肤都加了
+- 覆盖安装用 `/S /D=<当前目录>`，装回原地，`data/`（评分、收听史、账号）不受影响；安装失败自动打开下载页
+- 检查与下载用 .NET 的 `HttpClient`（系统证书库 + 系统代理）而非 Node `fetch`：本机 Node 访问 api.github.com 会报 `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`，用 Node 做这事在这台机器上直接不通
+- 安装包 payload 增加 `package.json`，作为「当前版本」的唯一来源
+- **修**：`--settings` 启动时依赖 `Window.Loaded`，而窗口在 `LoadUi()` 里就已经 Show，事件可能早于绑定 → 「管理.bat」偶尔打不开设置页。改成 `Dispatcher.BeginInvoke` 排队
 
 ---
 
