@@ -18,7 +18,7 @@
 
 **需要：Node.js 18+**（用来跑本地服务和豆瓣请求）。没装的话去 [nodejs.org](https://nodejs.org/) 装一个 LTS 版本。
 
-> **想直接用**：去 [Releases](https://github.com/shangchuanwu03/douban-nowplaying/releases) 下载 `DoubanNowPlaying-1.5.4-Setup.exe`，双击装完就能用，不用管下面的编译步骤。
+> **想直接用**：去 [Releases](https://github.com/shangchuanwu03/douban-nowplaying/releases) 下载最新的 `DoubanNowPlaying-*-Setup.exe`，双击装完就能用，不用管下面的编译步骤。
 >
 > **从源码克隆的**：仓库不含编译好的 `douban-overlay.exe`，先跑一次 `npm run build`（需要 Windows 自带的 .NET Framework 4.x），`启动.bat` 才有东西可启动。
 
@@ -112,7 +112,7 @@
 
 ## 安装包
 
-成品安装包在 **[Releases](https://github.com/shangchuanwu03/douban-nowplaying/releases)** 页发布：下载 `DoubanNowPlaying-1.5.4-Setup.exe`（约 700 KB，单文件，内置全部运行文件）。
+成品安装包在 **[Releases](https://github.com/shangchuanwu03/douban-nowplaying/releases)** 页发布：下载最新的 `DoubanNowPlaying-*-Setup.exe`（约 700 KB，单文件，内置全部运行文件）。
 
 > 文件是英文名，因为 GitHub 会把附件名里的中文清成 `-`。它就是本地 `dist\豆瓣正在听-安装包.exe` 同一个包，安装后程序名仍是「豆瓣正在听」。
 
@@ -148,6 +148,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File installer\build-installer.ps
 - 装失败了会自动打开下载页，让你手动装
 
 当前版本来自安装目录里的 `package.json`，「版本与更新」那一行会直接显示出来。
+
+> 从 **1.5.4 及更早版本**升级，需要手动下载安装一次 —— 自动更新是 1.5.5 才有的，老版本还没有「检查更新」入口。装完这一次，以后就能在设置里直接更新了。
 
 > 说明：检查与下载走的是 .NET 的 `HttpClient`（用 Windows 证书库和系统代理），不是 Node 的 `fetch` —— Node 自带的 CA 库在装了抓包代理 / 企业根证书的机器上会报 `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`，那正是「检查更新」最容易失效的地方。
 
