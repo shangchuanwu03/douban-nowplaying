@@ -1,0 +1,63 @@
+name: 🎯 豆瓣匹配错了
+description: 放的是 A 专辑，浮窗却显示 B 专辑的评分
+title: "[匹配] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        豆瓣上同一张专辑常有多个版本（首版、再版、磁带、引进版），自动匹配偶尔会挑错。
+        填完这个表我可以直接加一条绑定规则，或者改进匹配打分。
+
+        > 临时办法：右键浮窗 → 历史与设置 → **手动绑定** → 搜专辑名 → 点「绑定」，之后这张专辑就按你选的走。
+
+  - type: input
+    id: playing
+    attributes:
+      label: 实际在放的专辑
+      description: 播放器里显示的「专辑名」，最好连艺人和年份一起写
+      placeholder: 叶惠美 / 周杰伦 / 2003
+    validations:
+      required: true
+
+  - type: input
+    id: wrong
+    attributes:
+      label: 浮窗错显示成了哪个
+      description: 豆瓣上那个被误认的条目，能给链接最好
+      placeholder: 《叶惠美》1993 引进版 https://music.douban.com/subject/xxxxxxx/
+    validations:
+      required: true
+
+  - type: input
+    id: right
+    attributes:
+      label: 正确的豆瓣条目
+      description: 在豆瓣音乐搜到正确的那张，复制链接；找不到就写「搜不到」
+      placeholder: https://music.douban.com/subject/xxxxxxx/
+    validations:
+      required: true
+
+  - type: input
+    id: player
+    attributes:
+      label: 用的哪个播放器
+      description: 有些播放器会在专辑名后面加「- EP」「(Deluxe Edition)」这类后缀，往往就是它导致的
+      placeholder: Apple Music 桌面版
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本号
+      placeholder: 1.5.4
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断信息（可选，但很有用）
+      description: <http://127.0.0.1:4590/api/diagnostics> 里能看到这次用了哪些查询、各返回几条
+      render: text

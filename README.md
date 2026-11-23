@@ -209,6 +209,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File installer\build-installer.ps
 
 ---
 
+## 反馈与讨论
+
+| 想做什么 | 去哪儿 |
+| --- | --- |
+| 用不明白、装不上、随便问问 | [Discussions](https://github.com/shangchuanwu03/douban-nowplaying/discussions) |
+| 遇到 bug（识别不到、评分不对、同步失败） | [提个 issue](https://github.com/shangchuanwu03/douban-nowplaying/issues/new/choose) → 选「🐞 报告问题」 |
+| 豆瓣匹配错了专辑 | 同一入口选「🎯 豆瓣匹配错了」，会问你正确的豆瓣链接，我照着加绑定规则 |
+| 想要新功能 | 同一入口选「💡 提个想法」 |
+
+表单会问你要版本号、播放器和 `http://127.0.0.1:4590/api/diagnostics` 的内容 —— 有这些基本一次就能定位。
+提之前建议先扫一眼 **[常见问题](#常见问题)** 和 **[图文教程](使用教程.md)**：识别不到歌、评分是 `--`、本地服务未连接这几种高频情况那边都有答案。
+
+---
+
 ## 许可证
 
 本项目以 **GNU General Public License v3.0** 发布，详见 [LICENSE](LICENSE)。

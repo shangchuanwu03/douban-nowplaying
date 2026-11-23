@@ -1,0 +1,84 @@
+name: 🐞 报告问题
+description: 识别不到歌、评分不对、同步失败、界面出错……先用这个
+title: "[问题] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。填得越具体，修得越快。
+
+        提之前请先确认用的是**最新版**：<https://github.com/shangchuanwu03/douban-nowplaying/releases>
+        （README 的「常见问题」也覆盖了几种高频情况，可以先扫一眼）
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么
+      description: 一句话说清现象
+      placeholder: |
+        我在做什么 → 期望是什么 → 实际看到什么
+        例：在 Apple Music 放《叶惠美》，浮窗一直显示「豆瓣没找到这张」
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开播放器，播放 xxx
+        2. 浮窗显示 xxx
+        3. 点「同步」后出现了 xxx
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本号
+      description: 看你下载的安装包文件名，例如 DoubanNowPlaying-1.5.4-Setup.exe 就是 1.5.4
+      placeholder: 1.5.4
+    validations:
+      required: true
+
+  - type: dropdown
+    id: player
+    attributes:
+      label: 用的是哪个播放器
+      multiple: true
+      options:
+        - Apple Music（桌面版）
+        - Apple Music（网页版）
+        - Spotify
+        - 网易云音乐
+        - QQ 音乐
+        - foobar2000 / MusicBee
+        - VLC
+        - 其他（在下面补充）
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断信息（很关键）
+      description: |
+        打开 <http://127.0.0.1:4590/api/diagnostics>，把最近几条复制过来 —— 里面记录了识别用了什么查询、返回几条、失败原因。
+        再看一眼安装目录下的 `data/server.log`，把最后 20 行贴上。
+      render: text
+      placeholder: 把页面内容或日志最后 20 行贴在这里
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图
+      description: 直接把图片拖进这个框就行
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 我确认贴出的截图和日志里，没有我的豆瓣昵称、Cookie 等个人信息
+          required: true

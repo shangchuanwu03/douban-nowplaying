@@ -1,0 +1,42 @@
+name: 💡 提个想法
+description: 想要新功能，或者觉得哪里用着别扭
+title: "[建议] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        不用写得很正式，说清「你卡在哪」比「你想要什么功能」更有用 —— 我想知道背后的真实场景。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 现在哪里不顺手
+      description: 具体到某个操作或某个瞬间
+      placeholder: 每次换播放器都得手动去设置里改一下，很麻烦
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你希望变成什么样
+      placeholder: 希望能自动识别当前是哪个播放器在放，不用手选
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 试过别的办法吗（可选）
+      description: 现有的手动绑定、换皮肤、调缩放能不能凑合解决
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 大致属于哪类
+      options:
+        - label: 识别 / 匹配（哪张专辑）
+        - label: 豆瓣数据（评分、短评、同步）
+        - label: 界面 / 皮肤 / 布局
+        - label: 安装 / 启动 / 环境
