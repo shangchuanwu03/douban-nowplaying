@@ -386,7 +386,7 @@ Remove-Item $dir -Recurse -Force
                 {
                     if (key == null) return;
                     key.SetValue("DisplayName", AppName);
-                    key.SetValue("DisplayVersion", "1.5.5");
+                    key.SetValue("DisplayVersion", "1.6.0");
                     key.SetValue("Publisher", "DoubanNowPlaying");
                     key.SetValue("InstallLocation", dir);
                     key.SetValue("DisplayIcon", Path.Combine(dir, "douban-overlay.exe"));

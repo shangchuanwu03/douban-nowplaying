@@ -25,6 +25,7 @@ $files = @(
     'douban-overlay.exe',
     'package.json',
     'README.md',
+    'LICENSE',
     '使用教程.md',
     '使用教程.html',
 

@@ -27,7 +27,7 @@ namespace DoubanNowPlaying
     {
         const string BaseUrl = "http://127.0.0.1:4590";
 
-        static Brush Ink, Dim, Faint, Accent, Base, StarOff, Line, Mint;
+        static Brush Ink, Dim, Faint, Accent, Base, StarOff, Line, Mint, Quiet, Danger, Primary, OnPrimary;
         static bool IsGlass;
 
         static void ApplyPalette(bool glass)
@@ -43,17 +43,26 @@ namespace DoubanNowPlaying
                 StarOff = new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF));
                 Line = new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
                 Mint = NewBrush(0xE4, 0xB8, 0x63);
+                Primary = Accent;
+                OnPrimary = NewBrush(0x06, 0x0A, 0x13);
+                Quiet = Brushes.Transparent;
+                Danger = NewBrush(0xFF, 0x7B, 0x72);
             }
             else
             {
                 Ink = NewBrush(0x3D, 0x44, 0x51);
-                Dim = NewBrush(0x7B, 0x84, 0x94);
-                Faint = NewBrush(0x9A, 0xA3, 0xB2);
-                Accent = NewBrush(0x6D, 0x5D, 0xFC);
+                Dim = NewBrush(0x5B, 0x64, 0x73);
+                Faint = NewBrush(0x66, 0x70, 0x7F);
+                Accent = NewBrush(0x8A, 0x5A, 0x0A);
+                Primary = NewBrush(0x26, 0x2C, 0x45);
+                OnPrimary = Brushes.White;
                 Base = NewBrush(0xE0, 0xE5, 0xEC);
                 StarOff = NewBrush(0xC3, 0xC9, 0xD3);
                 Line = NewBrush(0xD3, 0xDA, 0xE4);
-                Mint = NewBrush(0x4E, 0xCD, 0xC4);
+                Mint = NewBrush(0x8A, 0x5A, 0x0A);
+                Danger = NewBrush(0xC0, 0x39, 0x2B);
+                Quiet = new LinearGradientBrush(
+                    Color.FromRgb(0xD3, 0xDA, 0xE3), Color.FromRgb(0xED, 0xF1, 0xF6), 45);
             }
         }
 
@@ -100,6 +109,9 @@ namespace DoubanNowPlaying
         string _initialTab;
 
         Border _tabHistory, _tabTodo, _tabBind, _tabSettings;
+        Border _tabIndicator;
+        FrameworkElement _tabHost;
+        System.Windows.Shapes.Rectangle _glowA, _glowB;
         Border _skinNeo, _skinGlass;
         TextBlock _skinNeoText, _skinGlassText;
 
@@ -116,6 +128,7 @@ namespace DoubanNowPlaying
         StackPanel _panelBind;
         StackPanel _historyList, _todoList, _bindResults;
         TextBox _searchBox, _cookieBox;
+        TextBlock _searchPlaceholder;
         Border _btnSearch, _btnSave, _btnClose;
         TextBlock _statusLine, _saveHint, _btnSaveText;
         string _cookiePlaceholder = "bid=xxxx; dbcl2=xxxx";
@@ -146,6 +159,10 @@ namespace DoubanNowPlaying
 
             _tabHistory = (Border)_win.FindName("TabHistory");
             _tabTodo = (Border)_win.FindName("TabTodo");
+            _tabIndicator = (Border)_win.FindName("TabIndicator");
+            _tabHost = _win.FindName("TabHost") as FrameworkElement;
+            _glowA = _win.FindName("GlowA") as System.Windows.Shapes.Rectangle;
+            _glowB = _win.FindName("GlowB") as System.Windows.Shapes.Rectangle;
             _tabBind = (Border)_win.FindName("TabBind");
             _tabSettings = (Border)_win.FindName("TabSettings");
             _tabHistoryText = (TextBlock)_win.FindName("TabHistoryText");
@@ -162,6 +179,7 @@ namespace DoubanNowPlaying
             _todoList = (StackPanel)_win.FindName("TodoList");
             _bindResults = (StackPanel)_win.FindName("BindResults");
             _searchBox = (TextBox)_win.FindName("SearchBox");
+            _searchPlaceholder = _win.FindName("SearchPlaceholder") as TextBlock;
             _cookieBox = (TextBox)_win.FindName("CookieBox");
 
             _btnSearch = (Border)_win.FindName("BtnSearch");
@@ -232,9 +250,28 @@ namespace DoubanNowPlaying
             {
                 if (e.Key == Key.Enter) await SearchAsync();
             };
+            _searchBox.TextChanged += (s, e) => UpdateSearchPlaceholder();
+            UpdateSearchPlaceholder();
 
             _btnSave.MouseLeftButtonUp += async (s, e) => await SaveCookieAsync();
             _btnClose.MouseLeftButtonUp += (s, e) => _win.Close();
+
+            foreach (var el in new FrameworkElement[]
+            {
+                _btnSearch, _btnSave, _btnLogin, _btnClip, _btnLogout, _btnImport,
+                _btnCheckUpdate, _btnApplyUpdate
+            })
+            {
+                if (el != null) Anim.Pressable(el, 1.03);
+            }
+            if (_btnClose != null) Anim.Pressable(_btnClose, 1.08);
+            if (_skinNeo != null) Anim.Pressable(_skinNeo, 1.03);
+            if (_skinGlass != null) Anim.Pressable(_skinGlass, 1.03);
+            if (_modeAuto != null) Anim.Pressable(_modeAuto, 1.03);
+            if (_modeApple != null) Anim.Pressable(_modeApple, 1.03);
+            if (_modeSpotify != null) Anim.Pressable(_modeSpotify, 1.03);
+            if (_modeNetease != null) Anim.Pressable(_modeNetease, 1.03);
+            if (_modeQQ != null) Anim.Pressable(_modeQQ, 1.03);
 
             _win.KeyDown += (s, e) =>
             {
@@ -255,6 +292,28 @@ namespace DoubanNowPlaying
 
             _win.Closed += (s, e) => _instance = null;
 
+            _win.Opacity = 0;
+            _win.Loaded += (s, e) =>
+            {
+                if (Anim.Enabled)
+                {
+                    var root = _win.Content as FrameworkElement;
+                    if (root != null)
+                    {
+                        root.RenderTransformOrigin = new Point(0.5, 0.5);
+                        var sc = Anim.Scale(root);
+                        Anim.Animate(sc, ScaleTransform.ScaleXProperty, 0.985, 1, 320, 0, Anim.EaseOut());
+                        Anim.Animate(sc, ScaleTransform.ScaleYProperty, 0.985, 1, 320, 0, Anim.EaseOut());
+                    }
+                }
+                Anim.Animate(_win, Window.OpacityProperty, 0, 1, 240, 0, Anim.EaseOut());
+                if (IsGlass)
+                {
+                    if (_glowA != null) Anim.DriftGlow(_glowA, -0.14, 0.14, 12000);
+                    if (_glowB != null) Anim.DriftGlow(_glowB, 0.12, -0.09, 15000);
+                }
+                MoveTabIndicator(TabBorder(_currentTab), false);
+            };
             _win.Show();
             // 从命令行/后台拉起时，单纯 Activate 可能抢不到前台，用 Topmost 抬一下再取消
             _win.Topmost = true;
@@ -444,7 +503,7 @@ namespace DoubanNowPlaying
                         if (!ok)
                         {
                             string err = r != null && r.ContainsKey("error") ? Convert.ToString(r["error"]) : "导入失败";
-                            if (_importHint != null) { _importHint.Text = err; _importHint.Foreground = NewBrush(0xFF, 0x6B, 0x6B); }
+                            if (_importHint != null) { _importHint.Text = err; _importHint.Foreground = Danger; }
                             return;
                         }
 
@@ -466,7 +525,7 @@ namespace DoubanNowPlaying
             }
             catch (Exception ex)
             {
-                if (_importHint != null) { _importHint.Text = "导入失败：" + ex.Message; _importHint.Foreground = NewBrush(0xFF, 0x6B, 0x6B); }
+                if (_importHint != null) { _importHint.Text = "导入失败：" + ex.Message; _importHint.Foreground = Danger; }
             }
             finally
             {
@@ -697,7 +756,7 @@ namespace DoubanNowPlaying
             else
             {
                 border.BorderThickness = new Thickness(0);
-                border.Background = active ? Base : Brushes.Transparent;
+                border.Background = active ? Base : Quiet;
                 text.Foreground = active ? Ink : Dim;
                 border.Effect = active
                     ? (System.Windows.Media.Effects.Effect)new System.Windows.Media.Effects.DropShadowEffect
@@ -722,9 +781,10 @@ namespace DoubanNowPlaying
             if (Overlay.Current != null) Overlay.Current.SetSkin(target, false);
 
             var old = _win;
+            string stay = _currentTab;
             _win = null;
             try { old.Close(); } catch { }
-            ShowSingleton();
+            ShowSingleton(false, stay);
         }
 
         async System.Threading.Tasks.Task PostSkinAsync(Overlay.SkinKind skin)
@@ -790,8 +850,32 @@ namespace DoubanNowPlaying
 
         /* -------------------------------- 标签 -------------------------------- */
 
+        Border TabBorder(string tab)
+        {
+            switch (tab)
+            {
+                case "todo": return _tabTodo;
+                case "bind": return _tabBind;
+                case "settings": return _tabSettings;
+                default: return _tabHistory;
+            }
+        }
+
+        static int TabIndex(string tab)
+        {
+            switch (tab)
+            {
+                case "todo": return 1;
+                case "bind": return 2;
+                case "settings": return 3;
+                default: return 0;
+            }
+        }
+
         void SwitchTab(string tab)
         {
+            int oldIndex = TabIndex(_currentTab);
+            int newIndex = TabIndex(tab);
             _currentTab = tab;
 
             StyleTab(_tabHistory, _tabHistoryText, tab == "history");
@@ -799,43 +883,89 @@ namespace DoubanNowPlaying
             StyleTab(_tabBind, _tabBindText, tab == "bind");
             StyleTab(_tabSettings, _tabSettingsText, tab == "settings");
 
-            _panelHistory.Visibility = tab == "history" ? Visibility.Visible : Visibility.Collapsed;
-            if (_panelTodo != null) _panelTodo.Visibility = tab == "todo" ? Visibility.Visible : Visibility.Collapsed;
-            _panelBind.Visibility = tab == "bind" ? Visibility.Visible : Visibility.Collapsed;
-            _panelSettings.Visibility = tab == "settings" ? Visibility.Visible : Visibility.Collapsed;
+            int dir = newIndex >= oldIndex ? 1 : -1;
+            ShowPanel(_panelHistory, tab == "history", dir);
+            if (_panelTodo != null) ShowPanel(_panelTodo, tab == "todo", dir);
+            ShowPanel(_panelBind, tab == "bind", dir);
+            ShowPanel(_panelSettings, tab == "settings", dir);
+
+            MoveTabIndicator(TabBorder(tab), true);
 
             if (tab == "history") LoadHistory();
             else if (tab == "todo") LoadTodos();
+            else if (tab == "bind" && _searchBox != null) _searchBox.Focus();
+        }
+
+        void UpdateSearchPlaceholder()
+        {
+            if (_searchPlaceholder == null || _searchBox == null) return;
+            if (string.IsNullOrEmpty(_searchBox.Text))
+            {
+                if (_searchPlaceholder.Visibility != Visibility.Visible)
+                {
+                    _searchPlaceholder.Visibility = Visibility.Visible;
+                    Anim.FadeIn(_searchPlaceholder, 140, 0, 0);
+                }
+            }
+            else
+            {
+                _searchPlaceholder.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>切换标签时内容淡入并从一侧轻移进来</summary>
+        void ShowPanel(FrameworkElement panel, bool show, int dir)
+        {
+            if (panel == null) return;
+            if (!show)
+            {
+                panel.Visibility = Visibility.Collapsed;
+                return;
+            }
+            panel.Visibility = Visibility.Visible;
+            if (!Anim.Enabled) return;
+            panel.Opacity = 0;
+            var tr = Anim.Translate(panel);
+            tr.Y = 0;
+            tr.X = dir * 14;
+            Anim.Animate(tr, TranslateTransform.XProperty, dir * 14, 0, 240, 0, Anim.EaseOut());
+            Anim.Animate(panel, UIElement.OpacityProperty, 0, 1, 220, 0, Anim.EaseOut());
+        }
+
+        /// <summary>分段控件下面那块会滑动的底：跟着当前标签走</summary>
+        void MoveTabIndicator(Border tab, bool animate)
+        {
+            if (_tabIndicator == null || tab == null) return;
+            var host = _tabIndicator.Parent as FrameworkElement;
+            if (host == null) return;
+            tab.UpdateLayout();
+            host.UpdateLayout();
+            if (tab.ActualWidth <= 0) return;
+
+            Point p = tab.TranslatePoint(new Point(0, 0), host);
+            var tt = _tabIndicator.RenderTransform as TranslateTransform;
+            if (tt == null)
+            {
+                tt = new TranslateTransform();
+                _tabIndicator.RenderTransform = tt;
+            }
+
+            if (!animate || !Anim.Enabled)
+            {
+                tt.X = p.X;
+                _tabIndicator.Width = tab.ActualWidth;
+                return;
+            }
+
+            Anim.Animate(tt, TranslateTransform.XProperty, tt.X, p.X, 260, 0, Anim.EaseOut());
+            Anim.Animate(_tabIndicator, FrameworkElement.WidthProperty,
+                _tabIndicator.ActualWidth, tab.ActualWidth, 260, 0, Anim.EaseOut());
         }
 
         static void StyleTab(Border border, TextBlock text, bool active)
         {
-            if (IsGlass)
-            {
-                border.Background = active
-                    ? new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF))
-                    : Brushes.Transparent;
-                text.Foreground = active ? Ink : Dim;
-                border.Effect = null;
-                return;
-            }
-            border.Background = active ? Base : Brushes.Transparent;
+            if (border == null || text == null) return;
             text.Foreground = active ? Ink : Dim;
-            if (active)
-            {
-                border.Effect = new System.Windows.Media.Effects.DropShadowEffect
-                {
-                    Color = Color.FromRgb(0xB8, 0xBC, 0xC2),
-                    BlurRadius = 8,
-                    ShadowDepth = 3,
-                    Direction = 315,
-                    Opacity = 0.9
-                };
-            }
-            else
-            {
-                border.Effect = null;
-            }
         }
 
         /* -------------------------------- 数据 -------------------------------- */
@@ -865,6 +995,7 @@ namespace DoubanNowPlaying
                 if (list.Count == 0)
                 {
                     _historyList.Children.Add(Empty("还没有收听记录"));
+                    Anim.Stagger(_historyList, 3, 8);
                     return;
                 }
 
@@ -878,6 +1009,7 @@ namespace DoubanNowPlaying
                     ratingMap.TryGetValue(Str(d, "subjectId"), out rating);
                     _historyList.Children.Add(HistoryRow(d, rating));
                 }
+                Anim.Stagger(_historyList, 10, 10);
             }
             catch (Exception ex)
             {
@@ -889,6 +1021,14 @@ namespace DoubanNowPlaying
         FrameworkElement HistoryRow(Dictionary<string, object> d, int rating)
         {
             var grid = new Grid { Margin = new Thickness(4, 10, 4, 10) };
+            var host = new Border
+            {
+                CornerRadius = new CornerRadius(12),
+                Background = new SolidColorBrush(Colors.Transparent),
+                Padding = new Thickness(2, 0, 2, 0),
+                Child = grid
+            };
+            AttachRowHover(host);
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(46) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -945,7 +1085,7 @@ namespace DoubanNowPlaying
                 {
                     armed = true;
                     delText.Text = "确认删除";
-                    delText.Foreground = NewBrush(0xFF, 0x6B, 0x6B);
+                    delText.Foreground = Danger;
                     if (revert == null)
                     {
                         revert = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -979,19 +1119,19 @@ namespace DoubanNowPlaying
                     {
                         del.IsEnabled = true;
                         delText.Text = "删除失败";
-                        delText.Foreground = NewBrush(0xFF, 0x6B, 0x6B);
+                        delText.Foreground = Danger;
                     }
                 }
                 catch (Exception ex)
                 {
                     del.IsEnabled = true;
                     delText.Text = "删除失败";
-                    delText.Foreground = NewBrush(0xFF, 0x6B, 0x6B);
+                    delText.Foreground = Danger;
                     if (_statusLine != null) _statusLine.Text = "删除失败：" + ex.Message;
                 }
             };
 
-            return grid;
+            return host;
         }
 
         /* ------------------------------ 待评分 ------------------------------ */
@@ -1012,6 +1152,7 @@ namespace DoubanNowPlaying
                 if (list.Count == 0)
                 {
                     _todoList.Children.Add(Empty("还没有待评分的专辑\n在浮窗上点「稍后再评」，这张就会出现在这里"));
+                    Anim.Stagger(_todoList, 3, 8);
                     return;
                 }
 
@@ -1022,6 +1163,7 @@ namespace DoubanNowPlaying
                     first = false;
                     _todoList.Children.Add(TodoRow(it));
                 }
+                Anim.Stagger(_todoList, 10, 10);
             }
             catch (Exception ex)
             {
@@ -1039,6 +1181,14 @@ namespace DoubanNowPlaying
             int chosen = (int)Num(d, "rating");
 
             var grid = new Grid { Margin = new Thickness(4, 10, 4, 12) };
+            var host = new Border
+            {
+                CornerRadius = new CornerRadius(12),
+                Background = new SolidColorBrush(Colors.Transparent),
+                Padding = new Thickness(2, 0, 2, 0),
+                Child = grid
+            };
+            AttachRowHover(host);
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(46) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -1196,7 +1346,7 @@ namespace DoubanNowPlaying
                 Padding = new Thickness(16, 0, 16, 0),
                 Height = 34,
                 Margin = new Thickness(10, 8, 0, 0),
-                Background = Accent,
+                Background = Primary,
                 Cursor = Cursors.Hand,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -1205,7 +1355,7 @@ namespace DoubanNowPlaying
                 Text = "同步",
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White,
+                Foreground = OnPrimary,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center
             };
@@ -1274,7 +1424,7 @@ namespace DoubanNowPlaying
                 };
             }
 
-            return grid;
+            return host;
         }
 
         /// <summary>从服务端返回里取 error 字段</summary>
@@ -1379,7 +1529,14 @@ namespace DoubanNowPlaying
         async System.Threading.Tasks.Task SearchAsync()
         {
             var q = (_searchBox.Text ?? "").Trim();
-            if (q.Length == 0) return;
+            if (q.Length == 0)
+            {
+                _bindResults.Children.Clear();
+                _bindResults.Children.Add(Empty("先输入专辑名或艺人"));
+                Anim.Stagger(_bindResults, 3, 8);
+                _searchBox.Focus();
+                return;
+            }
 
             _bindResults.Children.Clear();
             _bindResults.Children.Add(Empty("搜索中…"));
@@ -1397,6 +1554,7 @@ namespace DoubanNowPlaying
                 if (items.Count == 0)
                 {
                     _bindResults.Children.Add(Empty("没有结果"));
+                    Anim.Stagger(_bindResults, 3, 8);
                     return;
                 }
 
@@ -1407,6 +1565,7 @@ namespace DoubanNowPlaying
                     first = false;
                     _bindResults.Children.Add(BindRow(it));
                 }
+                Anim.Stagger(_bindResults, 8, 8);
             }
             catch (Exception ex)
             {
@@ -1418,6 +1577,14 @@ namespace DoubanNowPlaying
         FrameworkElement BindRow(Dictionary<string, object> it)
         {
             var grid = new Grid { Margin = new Thickness(4, 8, 4, 8) };
+            var host = new Border
+            {
+                CornerRadius = new CornerRadius(12),
+                Background = new SolidColorBrush(Colors.Transparent),
+                Padding = new Thickness(2, 0, 2, 0),
+                Child = grid
+            };
+            AttachRowHover(host);
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -1495,6 +1662,7 @@ namespace DoubanNowPlaying
             };
             var btnText = new TextBlock { Text = "绑定", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = Dim };
             btn.Child = btnText;
+            Anim.Pressable(btn, 1.04);
             Grid.SetColumn(btn, 3);
             grid.Children.Add(btn);
 
@@ -1530,7 +1698,7 @@ namespace DoubanNowPlaying
                 }
             };
 
-            return grid;
+            return host;
         }
 
         async System.Threading.Tasks.Task SaveCookieAsync()
@@ -1565,19 +1733,30 @@ namespace DoubanNowPlaying
                 else
                 {
                     _saveHint.Text = "保存失败";
-                    _saveHint.Foreground = NewBrush(0xFF, 0x6B, 0x6B);
+                    _saveHint.Foreground = Danger;
                 }
             }
             catch (Exception ex)
             {
                 _saveHint.Text = "保存失败：" + ex.Message;
-                _saveHint.Foreground = NewBrush(0xFF, 0x6B, 0x6B);
+                _saveHint.Foreground = Danger;
             }
             _btnSaveText.Text = "保存";
             _btnSave.IsEnabled = true;
         }
 
         /* -------------------------------- 零件 -------------------------------- */
+
+        static void AttachRowHover(Border host)
+        {
+            var brush = host.Background as SolidColorBrush;
+            if (brush == null) return;
+            Color hover = IsGlass
+                ? Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)
+                : Color.FromRgb(0xD8, 0xDE, 0xE7);
+            host.MouseEnter += (s, e) => Anim.ColorTo(brush, hover, 120);
+            host.MouseLeave += (s, e) => Anim.ColorTo(brush, Colors.Transparent, 160);
+        }
 
         static Border CoverBox(string coverUrl, double size)
         {

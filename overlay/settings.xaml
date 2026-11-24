@@ -13,14 +13,63 @@
         FontFamily="Segoe UI Variable Text, Microsoft YaHei UI, Segoe UI">
 
   <Window.Resources>
-    <LinearGradientBrush x:Key="RecessedFill" StartPoint="0,0" EndPoint="1,1">
+    <LinearGradientBrush x:Key="RecessedFill" StartPoint="0,0" EndPoint="0,1">
       <GradientStop Color="#C3CAD5" Offset="0" />
       <GradientStop Color="#DDE2EA" Offset="0.5" />
       <GradientStop Color="#F0F3F8" Offset="1" />
     </LinearGradientBrush>
     <SolidColorBrush x:Key="InkBrush" Color="#3D4451" />
-    <SolidColorBrush x:Key="DimBrush" Color="#7B8494" />
-    <SolidColorBrush x:Key="FaintBrush" Color="#9AA3B2" />
+    <SolidColorBrush x:Key="DimBrush" Color="#5B6473" />
+    <SolidColorBrush x:Key="FaintBrush" Color="#66707F" />
+    <SolidColorBrush x:Key="ScrollThumb" Color="#B9C1CC" />
+    <Style x:Key="SlimScrollBar" TargetType="ScrollBar">
+      <Setter Property="Width" Value="7" />
+      <Setter Property="MinWidth" Value="7" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ScrollBar">
+            <Grid Background="Transparent" Margin="1,2,1,2">
+              <Track x:Name="PART_Track" IsDirectionReversed="True" Orientation="Vertical">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Command="ScrollBar.PageUpCommand" Focusable="False">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.DecreaseRepeatButton>
+                <Track.Thumb>
+                  <Thumb>
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbBorder" CornerRadius="3" Background="{StaticResource ScrollThumb}" />
+                        <ControlTemplate.Triggers>
+                          <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Opacity" Value="0.7" />
+                          </Trigger>
+                        </ControlTemplate.Triggers>
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Command="ScrollBar.PageDownCommand" Focusable="False">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.IncreaseRepeatButton>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBar}" />
   </Window.Resources>
 
   <Grid Margin="20">
@@ -49,7 +98,7 @@
             <TextBlock x:Name="TitleText" Text="豆瓣正在听" FontSize="20" FontWeight="SemiBold"
                        Foreground="{StaticResource InkBrush}" />
             <TextBlock x:Name="TitleTail" Text=" · 管理" FontSize="20" FontWeight="SemiBold"
-                       Foreground="#6D5DFC" />
+                       Foreground="#8A5A0A" />
           </StackPanel>
           <TextBlock x:Name="StatusLine" HorizontalAlignment="Right" VerticalAlignment="Center"
                      FontSize="12" Foreground="{StaticResource FaintBrush}" Margin="0,0,46,0" />
@@ -58,8 +107,18 @@
         <!-- 分段控件 -->
         <Border Grid.Row="1" x:Name="TabTrack" HorizontalAlignment="Left" Margin="0,0,0,20"
                 CornerRadius="16" Background="{StaticResource RecessedFill}" Padding="5">
+          <Grid x:Name="TabHost">
+            <Border x:Name="TabIndicator" CornerRadius="12" HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                    Width="0" Background="#E0E5EC" IsHitTestVisible="False">
+              <Border.Effect>
+                <DropShadowEffect Color="#B8BCC2" BlurRadius="8" ShadowDepth="3" Direction="315" Opacity="0.9" />
+              </Border.Effect>
+              <Border.RenderTransform>
+                <TranslateTransform X="0" />
+              </Border.RenderTransform>
+            </Border>
           <StackPanel Orientation="Horizontal">
-            <Border x:Name="TabHistory" CornerRadius="12" Padding="18,8" Background="#E0E5EC" Cursor="Hand">
+            <Border x:Name="TabHistory" CornerRadius="12" Padding="18,8" Background="Transparent" Cursor="Hand">
               <TextBlock x:Name="TabHistoryText" Text="收听史" FontSize="13" FontWeight="SemiBold"
                          Foreground="{StaticResource InkBrush}" />
             </Border>
@@ -76,6 +135,7 @@
                          Foreground="{StaticResource DimBrush}" />
             </Border>
           </StackPanel>
+          </Grid>
         </Border>
 
         <!-- 内容 -->
@@ -98,18 +158,27 @@
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
               <Border CornerRadius="16" Background="{StaticResource RecessedFill}" Height="44">
-                <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0"
-                         Foreground="{StaticResource InkBrush}" CaretBrush="#6D5DFC" FontSize="13"
-                         VerticalContentAlignment="Center" Padding="16,0" />
+                <Grid>
+                  <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0"
+                           Foreground="{StaticResource InkBrush}" CaretBrush="#B0761A" FontSize="13"
+                           VerticalContentAlignment="Center" Padding="16,0" />
+                  <TextBlock x:Name="SearchPlaceholder" Text="搜专辑名或艺人" FontSize="13"
+                             Foreground="{StaticResource FaintBrush}" Margin="17,0,0,0"
+                             VerticalAlignment="Center" IsHitTestVisible="False" />
+                </Grid>
               </Border>
-              <Border x:Name="BtnSearch" Grid.Column="1" CornerRadius="16" Background="#6D5DFC"
+              <Border x:Name="BtnSearch" Grid.Column="1" CornerRadius="16" Background="#262C45"
                       Height="44" Padding="22,0" Margin="12,0,0,0" Cursor="Hand">
                 <TextBlock Text="搜索" Foreground="#FFFFFF" FontSize="13" FontWeight="SemiBold"
                            VerticalAlignment="Center" HorizontalAlignment="Center" />
               </Border>
             </Grid>
             <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="420">
-              <StackPanel x:Name="BindResults" />
+              <StackPanel x:Name="BindResults">
+                <TextBlock Text="搜专辑名或艺人，点「绑定」后，这张专辑以后就按你的选择走。"
+                           FontSize="12" Foreground="{StaticResource FaintBrush}" TextWrapping="Wrap"
+                           MaxWidth="560" Margin="4,16,0,0" HorizontalAlignment="Left" />
+              </StackPanel>
             </ScrollViewer>
           </StackPanel>
 
@@ -158,48 +227,48 @@
                          Foreground="{StaticResource DimBrush}" Margin="2,0,0,10" />
               <Grid Margin="0,0,0,22">
                 <StackPanel Orientation="Horizontal">
-                  <Border x:Name="BtnLogin" CornerRadius="16" Background="#6D5DFC" Height="40" Padding="22,0" Cursor="Hand">
+                  <Border x:Name="BtnLogin" CornerRadius="16" Background="#262C45" Height="40" Padding="22,0" Cursor="Hand">
                     <TextBlock x:Name="BtnLoginText" Text="打开豆瓣" Foreground="#FFFFFF" FontSize="13"
                                FontWeight="SemiBold" VerticalAlignment="Center" />
                   </Border>
-                  <Border x:Name="BtnClip" CornerRadius="16" Background="#E0E5EC" Height="40" Padding="16,0"
+                  <Border x:Name="BtnClip" CornerRadius="16" Background="{StaticResource RecessedFill}" Height="40" Padding="16,0"
                           Margin="10,0,0,0" Cursor="Hand">
-                    <TextBlock x:Name="BtnClipText" Text="从剪贴板读取" Foreground="#7B8494" FontSize="13"
+                    <TextBlock x:Name="BtnClipText" Text="从剪贴板读取" Foreground="{StaticResource DimBrush}" FontSize="13"
                                VerticalAlignment="Center" />
                   </Border>
-                  <Border x:Name="BtnLogout" CornerRadius="16" Background="#E0E5EC" Height="40" Padding="18,0"
+                  <Border x:Name="BtnLogout" CornerRadius="16" Background="{StaticResource RecessedFill}" Height="40" Padding="18,0"
                           Margin="10,0,0,0" Cursor="Hand" Visibility="Collapsed">
-                    <TextBlock x:Name="BtnLogoutText" Text="解除绑定" Foreground="#7B8494" FontSize="13"
+                    <TextBlock x:Name="BtnLogoutText" Text="解除绑定" Foreground="{StaticResource DimBrush}" FontSize="13"
                                VerticalAlignment="Center" />
                   </Border>
                 </StackPanel>
                 <TextBlock x:Name="DoubanStatus" HorizontalAlignment="Right" VerticalAlignment="Center"
                            Margin="0,0,8,0" MaxWidth="230" TextTrimming="CharacterEllipsis"
-                           FontSize="12" Foreground="#9AA3B2" Text="未绑定" />
+                           FontSize="12" Foreground="{StaticResource DimBrush}" Text="未绑定" />
               </Grid>
 
               <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
                 <Border x:Name="BtnImport" CornerRadius="10" Padding="2,4" Background="Transparent" Cursor="Hand">
                   <TextBlock x:Name="BtnImportText" Text="导入我在豆瓣听过的评分 →" FontSize="12"
-                             FontWeight="SemiBold" Foreground="#6D5DFC" />
+                             FontWeight="SemiBold" Foreground="#8A5A0A" />
                 </Border>
                 <TextBlock x:Name="ImportHint" Margin="10,0,0,0" FontSize="12"
-                           Foreground="#9AA3B2" VerticalAlignment="Center" />
+                           Foreground="{StaticResource FaintBrush}" VerticalAlignment="Center" />
               </StackPanel>
 
               <TextBlock Text="或手动粘贴 Cookie" FontSize="12" FontWeight="SemiBold"
                          Foreground="{StaticResource DimBrush}" Margin="2,0,0,8" />
               <Border CornerRadius="16" Background="{StaticResource RecessedFill}" Padding="2" Height="108">
                 <TextBox x:Name="CookieBox" Background="Transparent" BorderThickness="0"
-                         Foreground="{StaticResource InkBrush}" CaretBrush="#6D5DFC" FontSize="12.5"
+                         Foreground="{StaticResource InkBrush}" CaretBrush="#B0761A" FontSize="12.5"
                          AcceptsReturn="True" TextWrapping="Wrap" Padding="14,10"
                          VerticalScrollBarVisibility="Auto" />
               </Border>
-              <TextBlock FontSize="12" Foreground="{StaticResource FaintBrush}" Margin="2,12,0,0"
+              <TextBlock FontSize="12" Foreground="{StaticResource DimBrush}" Margin="2,12,0,0"
                          TextWrapping="Wrap" LineHeight="22"
                          Text="① 点「打开豆瓣」用默认浏览器打开豆瓣，登录后按 F12 → 网络(Network) → 刷新页面 → 点任意 douban.com 请求 → 标头(Headers) → 请求标头里的 Cookie，右键「复制值」。② 回到这里点「从剪贴板读取」。" />
               <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                <Border x:Name="BtnSave" CornerRadius="16" Background="#6D5DFC" Height="42" Padding="24,0" Cursor="Hand">
+                <Border x:Name="BtnSave" CornerRadius="16" Background="#262C45" Height="42" Padding="24,0" Cursor="Hand">
                   <TextBlock x:Name="BtnSaveText" Text="保存" Foreground="#FFFFFF" FontSize="13" FontWeight="SemiBold"
                              VerticalAlignment="Center" HorizontalAlignment="Center" />
                 </Border>
@@ -210,17 +279,17 @@
               <TextBlock Text="版本与更新" FontSize="12" FontWeight="SemiBold"
                          Foreground="{StaticResource DimBrush}" Margin="2,26,0,10" />
               <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <Border x:Name="BtnCheckUpdate" CornerRadius="16" Background="#E0E5EC" Height="40" Padding="18,0" Cursor="Hand">
-                  <TextBlock x:Name="BtnCheckUpdateText" Text="检查更新" Foreground="#7B8494" FontSize="13"
+                <Border x:Name="BtnCheckUpdate" CornerRadius="16" Background="{StaticResource RecessedFill}" Height="40" Padding="18,0" Cursor="Hand">
+                  <TextBlock x:Name="BtnCheckUpdateText" Text="检查更新" Foreground="{StaticResource DimBrush}" FontSize="13"
                              VerticalAlignment="Center" />
                 </Border>
-                <Border x:Name="BtnApplyUpdate" CornerRadius="16" Background="#6D5DFC" Height="40" Padding="20,0"
+                <Border x:Name="BtnApplyUpdate" CornerRadius="16" Background="#262C45" Height="40" Padding="20,0"
                         Margin="10,0,0,0" Cursor="Hand" Visibility="Collapsed">
                   <TextBlock x:Name="BtnApplyUpdateText" Text="立即更新" Foreground="#FFFFFF" FontSize="13"
                              FontWeight="SemiBold" VerticalAlignment="Center" />
                 </Border>
               </StackPanel>
-              <TextBlock x:Name="UpdateHint" FontSize="12" Foreground="#9AA3B2"
+              <TextBlock x:Name="UpdateHint" FontSize="12" Foreground="{StaticResource FaintBrush}"
                          Margin="2,0,0,6" TextWrapping="Wrap" Text="当前版本" />
               <TextBlock x:Name="UpdateNotes" FontSize="12" Foreground="{StaticResource FaintBrush}"
                          TextWrapping="Wrap" LineHeight="21" Margin="2,0,0,6" Visibility="Collapsed" />
@@ -230,7 +299,7 @@
 
         <!-- 关闭 -->
         <Border x:Name="BtnClose" Grid.Row="0" Width="32" Height="32" CornerRadius="12"
-                Background="#E0E5EC" HorizontalAlignment="Right" VerticalAlignment="Top" Cursor="Hand">
+                Background="{StaticResource RecessedFill}" HorizontalAlignment="Right" VerticalAlignment="Top" Cursor="Hand">
           <Border.Effect>
             <DropShadowEffect Color="#B8BCC2" BlurRadius="8" ShadowDepth="3" Direction="315" Opacity="0.9" />
           </Border.Effect>

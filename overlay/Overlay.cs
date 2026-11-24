@@ -37,7 +37,8 @@ namespace DoubanNowPlaying
 
         // 两套皮肤共用这些槽位，切换时整体重设
         static Brush Ink, Dim, Faint, Accent, Mint, Coral, Base, StarOff, PulseIdle,
-                     OnAccent, ScoreInk, DbStarOn, DistBase, Subtle;
+                     OnAccent, ScoreInk, DbStarOn, DistBase, DistTrack, Subtle, QuietFill,
+                     Primary, OnPrimary, Done, OnDone;
 
         static void ApplyPalette(SkinKind skin)
         {
@@ -53,27 +54,40 @@ namespace DoubanNowPlaying
                 StarOff = new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF));
                 PulseIdle = NewBrush(0x55, 0x70, 0x8F);
                 OnAccent = NewBrush(0x06, 0x0A, 0x13);
+                Primary = NewBrush(0xE9, 0xEF, 0xF9);   // 主按钮：近白胶囊 + 墨字
+                OnPrimary = NewBrush(0x0B, 0x12, 0x20);
+                Done = Accent;                          // 已同步：香槟金 + 深字
+                OnDone = NewBrush(0x2A, 0x1D, 0x08);
                 ScoreInk = NewBrush(0xE4, 0xB8, 0x63);
-                DbStarOn = new SolidColorBrush(Color.FromArgb(0xE6, 0xFF, 0xFF, 0xFF));
+                DbStarOn = NewBrush(0xE4, 0xB8, 0x63);
                 DistBase = NewBrush(0xE4, 0xB8, 0x63);
+                DistTrack = new SolidColorBrush(Color.FromArgb(0x08, 0xFF, 0xFF, 0xFF));
                 Subtle = new SolidColorBrush(Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF));
+                QuietFill = new SolidColorBrush(Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF));
             }
             else
             {
                 Ink = NewBrush(0x3D, 0x44, 0x51);
-                Dim = NewBrush(0x7B, 0x84, 0x94);
-                Faint = NewBrush(0x9A, 0xA3, 0xB2);
-                Accent = NewBrush(0x6D, 0x5D, 0xFC);
-                Mint = NewBrush(0x4E, 0xCD, 0xC4);
-                Coral = NewBrush(0xFF, 0x6B, 0x6B);
+                Dim = NewBrush(0x5B, 0x64, 0x73);
+                Faint = NewBrush(0x66, 0x70, 0x7F);
+                Accent = NewBrush(0x8A, 0x5A, 0x0A);   // 香槟金（深一档，浅底上才够对比）
+                Mint = NewBrush(0x8A, 0x5A, 0x0A);
+                Coral = NewBrush(0xC0, 0x39, 0x2B);
                 Base = NewBrush(0xE0, 0xE5, 0xEC);
                 StarOff = NewBrush(0xC3, 0xC9, 0xD3);
                 PulseIdle = NewBrush(0xB8, 0xBC, 0xC2);
                 OnAccent = Brushes.White;
-                ScoreInk = NewBrush(0x3D, 0x44, 0x51);
-                DbStarOn = NewBrush(0x3D, 0x44, 0x51);
-                DistBase = NewBrush(0x3D, 0x44, 0x51);
+                Primary = NewBrush(0x26, 0x2C, 0x45);   // 新拟物：主按钮用墨蓝，金色只留给评分
+                OnPrimary = Brushes.White;
+                Done = Primary;
+                OnDone = OnPrimary;
+                ScoreInk = NewBrush(0x8A, 0x5A, 0x0A);
+                DbStarOn = NewBrush(0x8A, 0x5A, 0x0A);
+                DistTrack = new SolidColorBrush(Color.FromArgb(0x0D, 0x23, 0x29, 0x41));
+                DistBase = Accent;
                 Subtle = NewBrush(0xE0, 0xE5, 0xEC);
+                QuietFill = new LinearGradientBrush(
+                    Color.FromRgb(0xD3, 0xDA, 0xE3), Color.FromRgb(0xED, 0xF1, 0xF6), 45);
             }
         }
 
@@ -89,12 +103,31 @@ namespace DoubanNowPlaying
         // 控件
         Border _card, _coverShell, _btnSync, _progressTrack, _progressFill, _btnManage, _mineRow, _btnLater;
         TextBlock _appName, _status, _album, _artist, _scoreNum, _scoreUnit, _votes, _hint, _coverLetter, _syncText, _laterText;
-        TextBlock _trackText;
-        Image _cover;
+        Border _statusChip;
+        TextBlock _trackText, _commentPh;
+        Image _cover, _coverPrev;
         Grid _dbStars, _dist;
         StackPanel _myStars;
         TextBox _comment;
-        System.Windows.Shapes.Ellipse _pulse;
+        System.Windows.Shapes.Ellipse _pulse, _pulseRing, _syncSpinner;
+        System.Windows.Shapes.Path _syncCheck;
+        System.Windows.Shapes.Rectangle _glowA, _glowB;
+        FrameworkElement _metaPanel, _syncIconHost, _scoreLine, _vinyl, _coverGlow, _coverSheen;
+        ScaleTransform _progressScale;
+        DispatcherTimer _hintTimer;
+        object _hintToken;
+        object _coverToken;
+        double _shownScore = -1;
+        double _dbFrac = -1;
+        bool _progressInited;
+        bool _vinylOn;
+        TranslateTransform _sheenShift;
+        bool _myStarsBuilt;
+        int _paintedRating = -1;
+        int _pulseState = -1;
+        string _trackSig;
+        string _distSig;
+        Border _dbClip;
 
         int? _subjectId;
         int _myRating;
@@ -102,6 +135,8 @@ namespace DoubanNowPlaying
         int? _commentSubjectId;   // 评语框里的文字属于哪张专辑
         bool _syncing;
         bool _synced;
+        bool _wasSyncing;
+        bool _wasSynced;
         bool _syncEnabled;
         bool _busy;
         string _coverUrl;
@@ -316,6 +351,7 @@ namespace DoubanNowPlaying
             _appName = (TextBlock)_win.FindName("AppName");
             _trackText = (TextBlock)_win.FindName("TrackText");
             _status = (TextBlock)_win.FindName("StatusText");
+            _statusChip = _win.FindName("StatusChip") as Border;
             _album = (TextBlock)_win.FindName("AlbumTitle");
             _artist = (TextBlock)_win.FindName("ArtistLine");
             _scoreNum = (TextBlock)_win.FindName("ScoreNum");
@@ -327,15 +363,57 @@ namespace DoubanNowPlaying
             _laterText = (TextBlock)_win.FindName("BtnLaterText");
 
             _cover = (Image)_win.FindName("CoverImage");
+            _coverPrev = (Image)_win.FindName("CoverImagePrev");
             _dbStars = (Grid)_win.FindName("DbStars");
             _dist = (Grid)_win.FindName("DistBar");
             _myStars = (StackPanel)_win.FindName("MyStars");
             _comment = (TextBox)_win.FindName("CommentBox");
             _pulse = (System.Windows.Shapes.Ellipse)_win.FindName("Pulse");
+            _pulseRing = (System.Windows.Shapes.Ellipse)_win.FindName("PulseRing");
+            _metaPanel = _win.FindName("MetaPanel") as FrameworkElement;
+            _scoreLine = _win.FindName("ScoreLine") as FrameworkElement;
+            _commentPh = _win.FindName("CommentPlaceholder") as TextBlock;
+            _syncIconHost = _win.FindName("SyncIconHost") as FrameworkElement;
+            _syncSpinner = _win.FindName("SyncSpinner") as System.Windows.Shapes.Ellipse;
+            _syncCheck = _win.FindName("SyncCheck") as System.Windows.Shapes.Path;
+            _glowA = _win.FindName("GlowA") as System.Windows.Shapes.Rectangle;
+            _glowB = _win.FindName("GlowB") as System.Windows.Shapes.Rectangle;
+            _vinyl = _win.FindName("Vinyl") as FrameworkElement;
+            _coverGlow = _win.FindName("CoverGlow") as FrameworkElement;
+            _coverSheen = _win.FindName("CoverSheen") as FrameworkElement;
 
-            _myStars.Width = 5 * 17;
+            // 进度条：宽度铺满轨道，用 ScaleX 平滑推进（不反复触发布局）
+            _progressFill.Width = 0;
+            _progressScale = new ScaleTransform(0, 1);
+            _progressFill.RenderTransform = _progressScale;
+            _progressFill.RenderTransformOrigin = new Point(0, 0.5);
+            _progressTrack.SizeChanged += (s, e) =>
+            {
+                if (_progressFill == null) return;
+                _progressFill.Width = Math.Max(0, _progressTrack.ActualWidth);
+                if (!_progressInited && _progressScale != null) _progressScale.ScaleX = 0;
+            };
+
+            // 换皮肤会重建窗口：所有动画缓存都要归零，否则新控件里是空的/旧值
+            _shownScore = -1;
+            _dbFrac = -1;
+            _dbClip = null;
+            _distSig = null;
+            _trackSig = null;
+            _myStarsBuilt = false;
+            _paintedRating = -1;
+            _pulseState = -1;
+            _progressInited = false;
+            _wasSyncing = false;
+            _wasSynced = false;
+            _vinylOn = false;
+            _hintToken = null;
+            if (_hintTimer != null) { _hintTimer.Stop(); _hintTimer = null; }
+
             BuildMyStars(0);
             _coverUrl = null; // 新窗口需要重新加载封面
+            _coverToken = null;
+            UpdateCommentPlaceholder();
 
             // 缩放：内容整体 LayoutTransform，窗口宽度跟着变；Ctrl+滚轮 / 右键菜单可调
             _root = _win.Content as FrameworkElement;
@@ -352,6 +430,11 @@ namespace DoubanNowPlaying
             AttachHover(_btnManage, 8);
             AttachHover(_btnSync, 8);
             AttachHover(_btnLater, 8);
+            Anim.Pressable(_btnManage, 1.08);
+            Anim.Pressable(_btnSync, 1.04);
+            if (_btnLater != null) Anim.Pressable(_btnLater, 1.04);
+            if (_btnSync != null) _btnSync.ToolTip = "把评分和短评写到豆瓣";
+            if (_btnLater != null) _btnLater.ToolTip = "先放进待评分，回头再补";
             _btnSync.MouseLeftButtonUp += async (s, e) => await SyncAsync();
             if (_btnLater != null) _btnLater.MouseLeftButtonUp += async (s, e) => await SaveLaterAsync();
 
@@ -366,6 +449,7 @@ namespace DoubanNowPlaying
             _comment.TextChanged += (s, e) =>
             {
                 if (_comment.IsFocused) _commentDirty = true;
+                UpdateCommentPlaceholder();
             };
 
             _comment.LostFocus += async (s, e) => { if (_commentDirty) await SaveCommentAsync(); };
@@ -431,15 +515,29 @@ namespace DoubanNowPlaying
                 Shutdown();
             };
 
-            // 入场动画
+            // 入场：淡入 + 轻轻上浮；玻璃皮肤的两团柔光开始缓慢漂移
             _win.Opacity = 0;
             _win.Loaded += (s, e) =>
             {
-                var anim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280))
-                { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
-                _win.BeginAnimation(Window.OpacityProperty, anim);
+                if (Anim.Enabled && _root != null)
+                {
+                    _root.RenderTransformOrigin = new Point(0.5, 0.5);
+                    var sc = Anim.Scale(_root);
+                    Anim.Animate(sc, ScaleTransform.ScaleXProperty, 0.97, 1, 420, 0, Anim.EaseOut());
+                    Anim.Animate(sc, ScaleTransform.ScaleYProperty, 0.97, 1, 420, 0, Anim.EaseOut());
+                    var tr = Anim.Translate(_root);
+                    Anim.Animate(tr, TranslateTransform.YProperty, 16, 0, 420, 0, Anim.EaseOut());
+                }
+                Anim.Animate(_win, Window.OpacityProperty, 0, 1, 280, 0, Anim.EaseOut());
+                if (Skin == SkinKind.Glass)
+                {
+                    if (_glowA != null) Anim.DriftGlow(_glowA, -0.16, 0.14, 11000);
+                    if (_glowB != null) Anim.DriftGlow(_glowB, 0.14, -0.10, 13000);
+                }
+                StartCoverAmbient();
+                if (_pulseState < 0) SetPulse(false);
             };
-       
+
             _win.Show();
         }
 
@@ -483,7 +581,7 @@ namespace DoubanNowPlaying
         /* ------------------------------- 缩放 ------------------------------- */
 
         // 设计稿宽度：460（含 18 的外边距）
-        const double BaseWidth = 460;
+        const double BaseWidth = 580;   // 和介绍动画里的浮窗同宽
 
         void ApplyScale()
         {
@@ -702,16 +800,20 @@ namespace DoubanNowPlaying
             {
                 _appName.Text = "等待播放";
                 if (_trackText != null) _trackText.Text = "";
-                _status.Text = "";
+                SetStatus("");
                 _album.Text = "还没有在放歌";
-                _artist.Text = "在 Apple Music 里播放一张专辑即可";
+                _artist.Text = "在 Apple Music 里放一张专辑即可";
                 _scoreNum.Text = "—";
                 _scoreNum.Foreground = Faint;
                 _votes.Text = "豆瓣评分";
                 _scoreUnit.Visibility = Visibility.Collapsed;
-                _mineRow.Visibility = Visibility.Collapsed;
+                if (_scoreLine != null) _scoreLine.Visibility = Visibility.Collapsed;
+                if (_dist != null) _dist.Visibility = Visibility.Collapsed;
+                if (_metaPanel != null) _metaPanel.VerticalAlignment = VerticalAlignment.Center;
+                SetMineVisible(false);
                 SetDbStars(0);
                 ClearDist();
+                if (_hintTimer != null) { _hintTimer.Stop(); _hintTimer = null; }
                 _hint.Visibility = Visibility.Collapsed;
                 SetProgress(0);
                 FlushPendingComment();
@@ -722,16 +824,35 @@ namespace DoubanNowPlaying
                 SetMineEnabled(false);
                 SetLaterState(false, false);
                 SetLaterEnabled(false);
+                SetPulse(false);
+                if (_trackSig != null)
+                {
+                    _trackSig = null;
+                    _shownScore = -1;
+                    if (_metaPanel != null) Anim.SlideIn(_metaPanel, 16, 340, 0);
+                }
+                _hintToken = null;
+                SetCover(null);
+                if (_coverLetter != null)
+                {
+                    _coverLetter.Text = "♪";
+                    _coverLetter.Visibility = Visibility.Collapsed;
+                }
+                SetVinyl(true);
+                UpdateCommentPlaceholder();
                 return;
             }
 
-            _mineRow.Visibility = Visibility.Visible;
             _scoreUnit.Visibility = Visibility.Visible;
+            if (_scoreLine != null) _scoreLine.Visibility = Visibility.Visible;
+            if (_metaPanel != null) _metaPanel.VerticalAlignment = VerticalAlignment.Top;
+            SetMineVisible(true);
             SetLaterEnabled(true);
             _appName.Text = GetStr(player, "appName") ?? "未知来源";
             var st = GetStr(player, "status");
-            _status.Text = st == "Playing" ? "正在播放" : st == "Paused" ? "已暂停" : "";
-            _pulse.Fill = st == "Playing" ? Mint : PulseIdle;
+            string statusText = st == "Playing" ? "正在播放" : st == "Paused" ? "已暂停" : "";
+            if (_status.Text != statusText) SetStatus(statusText);
+            SetPulse(st == "Playing");
 
             var subject = match != null ? GetDict(match, "subject") : null;
 
@@ -741,16 +862,7 @@ namespace DoubanNowPlaying
                 albumText = GetStr(player, "album");
             if (string.IsNullOrEmpty(albumText))
                 albumText = GetStr(player, "title");
-            _album.Text = string.IsNullOrEmpty(albumText) ? "未知曲目" : albumText;
-
-            // 顶栏「播放器 · 当前曲目」：曲目和专辑同名时不重复显示
-            if (_trackText != null)
-            {
-                var cur = GetStr(player, "title");
-                bool sameAsAlbum = !string.IsNullOrEmpty(cur) && !string.IsNullOrEmpty(albumText) &&
-                                   SameName(cur, albumText);
-                _trackText.Text = string.IsNullOrEmpty(cur) || sameAsAlbum ? "" : "· " + cur;
-            }
+            string newAlbum = string.IsNullOrEmpty(albumText) ? "未知曲目" : albumText;
 
             string artistText = subject != null ? GetStr(subject, "artistText") : null;
             if (string.IsNullOrEmpty(artistText)) artistText = GetStr(player, "artist");
@@ -761,35 +873,71 @@ namespace DoubanNowPlaying
             if (!string.IsNullOrEmpty(artistText)) bits.Add(artistText);
             if (!string.IsNullOrEmpty(date) && date.Length >= 4) bits.Add(date.Substring(0, 4));
             if (!string.IsNullOrEmpty(genre)) bits.Add(genre);
-            _artist.Text = string.Join(" · ", bits);
+            string newArtist = string.Join(" · ", bits);
 
-            // 封面
+            var newSubjectId = subject != null ? (int?)GetDbl(subject, "id") : null;
+            string sig = newAlbum + "\u0001" + newArtist + "\u0001" +
+                         (newSubjectId.HasValue ? newSubjectId.Value.ToString(CultureInfo.InvariantCulture) : "-");
+            bool trackChanged = sig != _trackSig;
+            if (trackChanged)
+            {
+                _trackSig = sig;
+                _shownScore = -1;     // 新专辑：分数从 0 滚上去
+                _distSig = null;
+            }
+
+            if (_album.Text != newAlbum) _album.Text = newAlbum;
+            if (_artist.Text != newArtist) _artist.Text = newArtist;
+            if (trackChanged && _metaPanel != null) Anim.SlideIn(_metaPanel, 16, 340, 10);
+
+            // 顶栏「播放器 · 当前曲目」：曲目和专辑同名时不重复显示
+            if (_trackText != null)
+            {
+                var cur = GetStr(player, "title");
+                bool sameAsAlbum = !string.IsNullOrEmpty(cur) && !string.IsNullOrEmpty(albumText) &&
+                                   SameName(cur, albumText);
+                string line = string.IsNullOrEmpty(cur) || sameAsAlbum ? "" : "· " + cur;
+                if (_trackText.Text != line) _trackText.Text = line;
+            }
+
+            // 封面：换专辑时交叉淡入
             var coverUrl = subject != null ? GetStr(subject, "cover") : null;
             SetCover(coverUrl);
 
-            // 豆瓣评分
+            // 豆瓣评分：数字滚动 + 星星/分布条生长
             double score = subject != null ? GetDbl(subject, "score") : 0;
             double votes = subject != null ? GetDbl(subject, "votes") : 0;
             if (score > 0)
             {
-                _scoreNum.Text = score.ToString("0.0", CultureInfo.InvariantCulture);
                 _scoreNum.Foreground = ScoreInk;
-                _votes.Text = FormatVotes(votes);
+                _scoreNum.ToolTip = "豆瓣评分 " + score.ToString("0.0", CultureInfo.InvariantCulture) +
+                                    " · " + FormatVotes(votes);
+                if (Math.Abs(score - _shownScore) > 0.001)
+                {
+                    double from = _shownScore > 0 ? _shownScore : 0;
+                    Anim.CountTo(_scoreNum, from, score, "0.0", 520);
+                    Anim.Pop(_scoreNum, 1.0, 1.06, 320);
+                    _shownScore = score;
+                }
+                string vt = FormatVotes(votes);
+                if (_votes.Text != vt) _votes.Text = vt;
                 SetDbStars(score);
                 RenderDist(subject);
             }
             else
             {
+                _shownScore = -1;
                 _scoreNum.Text = match != null ? "--" : "···";
                 _scoreNum.Foreground = Faint;
+                _scoreNum.ToolTip = null;
                 bool resolvingNow = GetBool(root, "resolving");
-                _votes.Text = match != null ? "豆瓣暂无评分" : (resolvingNow ? "正在查豆瓣…" : "豆瓣没有收录");
+                string vt = match != null ? "豆瓣暂无评分" : (resolvingNow ? "正在查豆瓣…" : "豆瓣没有收录");
+                if (_votes.Text != vt) _votes.Text = vt;
                 SetDbStars(0);
                 ClearDist();
             }
 
             // 我的评分
-            var newSubjectId = subject != null ? (int?)GetDbl(subject, "id") : null;
             bool switching = newSubjectId != _commentSubjectId;
 
             // 换专辑时，先把还没保存的评语写回它真正所属的那张，
@@ -808,23 +956,33 @@ namespace DoubanNowPlaying
             }
             else if (!_commentDirty && !_comment.IsFocused)
             {
-                _comment.Text = my != null ? (GetStr(my, "comment") ?? "") : "";
+                string comment = my != null ? (GetStr(my, "comment") ?? "") : "";
+                if (_comment.Text != comment) _comment.Text = comment;
             }
+            UpdateCommentPlaceholder();
+
             bool synced = my != null && GetBool(my, "synced");
-            SetSyncState(synced, false);
+            if (!_syncing) SetSyncState(synced, false);
             SetMineEnabled(_subjectId.HasValue && _myRating > 0);
 
             // 待评分状态：同一张已经「稍后再评」过就显示成已加入
-            SetLaterState(GetBool(root, "currentTodo"), false);
+            if (!_laterBusy) SetLaterState(GetBool(root, "currentTodo"), false);
 
             // 提示
             bool resolving = GetBool(root, "resolving");
             if (match == null && !resolving && !string.IsNullOrEmpty(GetStr(player, "title")))
             {
-                _hint.Text = "豆瓣没找到这张 · 右键「手动绑定」";
-                _hint.Visibility = Visibility.Visible;
+                string msg = "豆瓣没找到这张 · 右键「手动绑定」";
+                if (_hint.Text != msg || _hint.Visibility != Visibility.Visible)
+                {
+                    _hintToken = null;
+                    _hint.Text = msg;
+                    _hint.Foreground = Dim;
+                    _hint.Visibility = Visibility.Visible;
+                    Anim.SlideIn(_hint, 6, 200, 0);
+                }
             }
-            else
+            else if (_hintTimer == null)
             {
                 _hint.Visibility = Visibility.Collapsed;
             }
@@ -869,23 +1027,116 @@ namespace DoubanNowPlaying
         void SetOffline()
         {
             _appName.Text = "本地服务未连接";
-            _status.Text = "";
+            SetStatus("");
             _album.Text = "等待服务…";
             _artist.Text = "正在尝试重新连接 127.0.0.1:4590";
         }
 
         /* -------------------------------- 视图 -------------------------------- */
 
+        /// <summary>封面光晕呼吸 + 每隔几秒一道高光扫过封面</summary>
+        void StartCoverAmbient()
+        {
+            if (_coverGlow != null)
+            {
+                _coverGlow.Opacity = 0.18;
+                if (Anim.Enabled)
+                {
+                    var breathe = new DoubleAnimation(0.16, 0.38,
+                        new Duration(TimeSpan.FromMilliseconds(3800)))
+                    {
+                        AutoReverse = true,
+                        RepeatBehavior = RepeatBehavior.Forever,
+                        EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                    };
+                    _coverGlow.BeginAnimation(UIElement.OpacityProperty, breathe);
+                }
+                else
+                {
+                    _coverGlow.Opacity = 0.22;
+                }
+            }
+
+            if (_coverSheen != null)
+            {
+                _sheenShift = Anim.Translate(_coverSheen);
+                if (!Anim.Enabled)
+                {
+                    _coverSheen.Opacity = 0;
+                    return;
+                }
+                var sweep = new DoubleAnimationUsingKeyFrames
+                {
+                    Duration = new Duration(TimeSpan.FromMilliseconds(5200)),
+                    RepeatBehavior = RepeatBehavior.Forever
+                };
+                sweep.KeyFrames.Add(new LinearDoubleKeyFrame(-170, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                sweep.KeyFrames.Add(new EasingDoubleKeyFrame(170,
+                    KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(900)), Anim.EaseOut()));
+                sweep.KeyFrames.Add(new LinearDoubleKeyFrame(170,
+                    KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(5200))));
+                _sheenShift.BeginAnimation(TranslateTransform.XProperty, sweep);
+            }
+        }
+
+        void SetVinyl(bool show)
+        {
+            if (_vinyl == null) return;
+            if (show == _vinylOn) return;
+            _vinylOn = show;
+            if (show)
+            {
+                _vinyl.Visibility = Visibility.Visible;
+                _vinyl.Opacity = 0;
+                Anim.FadeIn(_vinyl, 320, 0, 0);
+                Anim.RotateForever(_vinyl, 14000);
+                if (_coverLetter != null) _coverLetter.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                Anim.FadeOut(_vinyl, 220, () =>
+                {
+                    if (_vinylOn) return;   // 淡出途中又开始放封面，别把新的唱片收掉
+                    _vinyl.Visibility = Visibility.Collapsed;
+                    Anim.StopRotate(_vinyl);
+                });
+            }
+        }
+
         void SetCover(string url)
         {
-            if (url == _coverUrl) return;
+            if (url == _coverUrl)
+            {
+                if (string.IsNullOrEmpty(url))
+                {
+                    if (_coverLetter != null)
+                        _coverLetter.Text = string.IsNullOrEmpty(_album.Text) ? "♪" : _album.Text.Substring(0, 1);
+                    SetVinyl(true);
+                }
+                return;
+            }
             _coverUrl = url;
+            var token = new object();
+            _coverToken = token;
 
             if (string.IsNullOrEmpty(url))
             {
-                _cover.Source = null;
+                if (_cover.Source != null)
+                {
+                    _coverPrev.Source = _cover.Source;
+                    _coverPrev.Opacity = 1;
+                    _cover.Source = null;
+                    _cover.Opacity = 0;
+                    Anim.FadeOut(_coverPrev, 240, () => { _coverPrev.Source = null; });
+                }
+                else
+                {
+                    _coverPrev.Source = null;
+                    _coverPrev.Opacity = 0;
+                }
                 _coverLetter.Text = string.IsNullOrEmpty(_album.Text) ? "♪" : _album.Text.Substring(0, 1);
-                _coverLetter.Visibility = Visibility.Visible;
+                _coverLetter.Visibility = Visibility.Collapsed;
+                SetVinyl(true);
                 return;
             }
 
@@ -897,20 +1148,53 @@ namespace DoubanNowPlaying
                 bmp.CacheOption = BitmapCacheOption.OnLoad;
                 bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
                 bmp.EndInit();
-                bmp.DownloadCompleted += (s, e) =>
+
+                bool applied = false;
+                Action apply = () =>
                 {
+                    if (applied) return;
+                    applied = true;
+                    if (!ReferenceEquals(_coverToken, token)) return;
                     _coverLetter.Visibility = Visibility.Collapsed;
+                            Anim.StopAnim(_coverLetter);
+                    SetVinyl(false);
+                    Anim.FadeIn(_cover, 280, 0, 0);
+                    Anim.ScaleTo(_cover, 1.035, 1.0, 520, 0, false);
+                    if (_coverPrev.Source != null)
+                    {
+                        Anim.FadeOut(_coverPrev, 300, () => { _coverPrev.Source = null; });
+                    }
                 };
-                bmp.DownloadFailed += (s, e) =>
+
+                bmp.DownloadCompleted += (s2, e2) => apply();
+                bmp.DownloadFailed += (s2, e2) =>
                 {
-                    _coverLetter.Visibility = Visibility.Visible;
+                    if (!ReferenceEquals(_coverToken, token)) return;
+                    _cover.Source = null;
+                    _coverLetter.Text = string.IsNullOrEmpty(_album.Text) ? "♪" : _album.Text.Substring(0, 1);
+                    _coverLetter.Visibility = Visibility.Collapsed;
+                    SetVinyl(true);
                 };
+
+                // 旧封面留在下一层，新封面加载好再交叉淡入，避免中间闪白
+                var oldSource = _cover.Source;
+                if (oldSource != null)
+                {
+                    _coverPrev.Source = oldSource;
+                    _coverPrev.Opacity = 1;
+                }
                 _cover.Source = bmp;
+                _cover.Opacity = 0;
+
+                // 本地缓存命中时 DownloadCompleted 可能已经在 EndInit 里走完，
+                // 这里补一次检查，避免封面永远停在 0 透明度。
+                if (!bmp.IsDownloading && bmp.PixelWidth > 0) apply();
             }
             catch
             {
                 _cover.Source = null;
-                _coverLetter.Visibility = Visibility.Visible;
+                _coverLetter.Visibility = Visibility.Collapsed;
+                SetVinyl(true);
             }
         }
 
@@ -946,75 +1230,120 @@ namespace DoubanNowPlaying
         void SetDbStars(double score10)
         {
             double frac = Math.Max(0, Math.Min(5, score10 / 2.0)) / 5.0;
-            const double slot = 15;
-            const double size = 12;
+            const double slot = 18;
+            const double size = 15;
             double total = slot * 5;
 
-            _dbStars.Children.Clear();
-            _dbStars.Width = total;
-            _dbStars.Height = size;
-
-            _dbStars.Children.Add(StarStrip(5, slot, size, StarOff));
-            if (frac <= 0) return;
-
-            var clip = new Border
+            if (_dbClip == null || _dbStars.Children.Count != 2)
             {
-                Width = total * frac,
-                ClipToBounds = true,
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-            clip.Child = StarStrip(5, slot, size, DbStarOn);
-            _dbStars.Children.Add(clip);
+                _dbStars.Children.Clear();
+                _dbStars.Width = total;
+                _dbStars.Height = size;
+                _dbStars.Children.Add(StarStrip(5, slot, size, StarOff));
+
+                _dbClip = new Border
+                {
+                    Width = 0,
+                    Height = size,
+                    ClipToBounds = true,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    Child = StarStrip(5, slot, size, DbStarOn)
+                };
+                _dbStars.Children.Add(_dbClip);
+                _dbFrac = 0;
+            }
+
+            double target = total * frac;
+            if (Math.Abs(target - _dbFrac) < 0.3) return;
+            double from = _dbClip.Width;
+            if (double.IsNaN(from)) from = 0;
+            _dbFrac = target;
+            if (!Anim.Enabled) { _dbClip.Width = target; return; }
+            Anim.Animate(_dbClip, FrameworkElement.WidthProperty, from, target, 460, 30, Anim.EaseOut());
         }
 
-        void PaintMyStars(int n)
+        void PaintMyStars(int n, bool lift, bool pop)
         {
             for (int k = 0; k < _myStars.Children.Count; k++)
             {
                 var host = _myStars.Children[k] as Grid;
-                if (host == null) continue;
-                var star = host.Children.Count > 0 ? host.Children[0] as System.Windows.Shapes.Path : null;
-                if (star != null) star.Fill = k < n ? Accent : StarOff;
+                if (host == null || host.Children.Count == 0) continue;
+                var star = host.Children[0] as System.Windows.Shapes.Path;
+                if (star != null)
+                {
+                    var fill = star.Fill as SolidColorBrush;
+                    if (fill != null)
+                    {
+                        Anim.ColorTo(fill, k < n ? ColorOf(Accent) : ColorOf(StarOff), 130);
+                    }
+                }
+                var sc = Anim.Scale(host);
+                double to = lift && k < n ? 1.14 : 1.0;
+                if (pop && k == n - 1)
+                {
+                    Anim.Pop(host, 1.32, to, 340);
+                }
+                else
+                {
+                    Anim.Animate(sc, ScaleTransform.ScaleXProperty, sc.ScaleX, to, 140, 0, Anim.EaseOut());
+                    Anim.Animate(sc, ScaleTransform.ScaleYProperty, sc.ScaleY, to, 140, 0, Anim.EaseOut());
+                }
             }
         }
 
         void BuildMyStars(int rating)
         {
-            _myStars.Children.Clear();
-            const double slot = 18;
-            const double size = 15;
-            _myStars.Width = slot * 5;
-            _myStars.Height = size;
-
-            for (int i = 1; i <= 5; i++)
+            if (!_myStarsBuilt)
             {
-                var host = new Grid
-                {
-                    Width = slot,
-                    Height = size,
-                    Background = Brushes.Transparent,
-                    Cursor = Cursors.Hand
-                };
-                host.Children.Add(MakeStar(size, i <= rating ? Accent : StarOff));
+                _myStars.Children.Clear();
+                const double slot = 20;
+                const double size = 16;
+                _myStars.Width = slot * 5;
+                _myStars.Height = 20;
 
-                int value = i;
-                host.MouseEnter += (s, e) =>
+                string[] tips = { "1 星 · 很差", "2 星 · 较差", "3 星 · 还行", "4 星 · 推荐", "5 星 · 力荐" };
+                for (int i = 1; i <= 5; i++)
                 {
-                    _lastInteraction = DateTime.Now;
-                    PaintMyStars(value);
-                };
-                host.MouseLeave += (s, e) => PaintMyStars(_myRating);
-                host.MouseLeftButtonUp += async (s, e) => await RateAsync(value);
-                _myStars.Children.Add(host);
+                    var host = new Grid
+                    {
+                        Width = slot,
+                        Height = 20,
+                        Background = Brushes.Transparent,
+                        Cursor = Cursors.Hand,
+                        ToolTip = tips[i - 1]
+                    };
+                    var fill = new SolidColorBrush(ColorOf(StarOff));
+                    host.Children.Add(MakeStar(size, fill));
+
+                    int value = i;
+                    host.MouseEnter += (s, e) =>
+                    {
+                        _lastInteraction = DateTime.Now;
+                        PaintMyStars(value, true, false);
+                    };
+                    host.MouseLeave += (s, e) => PaintMyStars(_myRating, false, false);
+                    host.MouseLeftButtonUp += async (s, e) => await RateAsync(value);
+                    _myStars.Children.Add(host);
+                }
+                _myStarsBuilt = true;
+                _paintedRating = -1;
             }
+
+            if (_paintedRating != rating)
+            {
+                _paintedRating = rating;
+                PaintMyStars(rating, false, false);
+            }
+        }
+
+        static Color ColorOf(Brush b)
+        {
+            var s = b as SolidColorBrush;
+            return s != null ? s.Color : Colors.White;
         }
 
         void RenderDist(Dictionary<string, object> subject)
         {
-            _dist.Children.Clear();
-            _dist.ColumnDefinitions.Clear();
-            _dist.Background = null;
-
             var raw = subject != null && subject.ContainsKey("distribution") ? subject["distribution"] : null;
             var vals = new List<double>();
             var seq = raw as System.Collections.IEnumerable;
@@ -1022,24 +1351,71 @@ namespace DoubanNowPlaying
             {
                 foreach (var o in seq) vals.Add(ToDouble(o));
             }
-            if (vals.Count != 5) return;
+            if (vals.Count != 5)
+            {
+                ClearDist();
+                return;
+            }
 
+            var sig = new StringBuilder();
+            for (int i = 0; i < 5; i++) sig.Append(vals[i].ToString("0.##", CultureInfo.InvariantCulture)).Append('|');
+            string sigText = sig.ToString();
+            if (sigText == _distSig)
+            {
+                _dist.Visibility = Visibility.Visible;
+                return;
+            }
+            _distSig = sigText;
+
+            _dist.Visibility = Visibility.Visible;
+            _dist.Children.Clear();
+            _dist.ColumnDefinitions.Clear();
+            _dist.RowDefinitions.Clear();
+            _dist.Background = null;
+
+            // 视频里的五星分布：五行通栏轨道，长度按比例，从 5 星到 1 星往下排
             for (int i = 0; i < 5; i++)
             {
-                double pct = vals[i];
-                _dist.ColumnDefinitions.Add(new ColumnDefinition
-                {
-                    Width = new GridLength(Math.Max(pct, 0.4), GridUnitType.Star)
-                });
+                double pct = Math.Max(vals[i], 0.4);
+                _dist.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                var bd = new Border
+                var track = new Border
                 {
-                    Background = DistBrush(i),
-                    Margin = new Thickness(0, 0, i < 4 ? 3 : 0, 0)
+                    Height = 5,
+                    CornerRadius = new CornerRadius(2.5),
+                    Background = null,
+                    Margin = new Thickness(0, 0, 0, i < 4 ? 5 : 0),
+                    ToolTip = (i + 1) + " 星 · " + pct.ToString("0.#", CultureInfo.InvariantCulture) + "%"
                 };
-                Grid.SetColumn(bd, i);
-                _dist.Children.Add(bd);
+                var fill = new Border
+                {
+                    Height = 5,
+                    CornerRadius = new CornerRadius(2.5),
+                    Background = DistBarBrush(),
+                    RenderTransformOrigin = new Point(0, 0.5)
+                };
+                fill.RenderTransform = new ScaleTransform(0, 1);
+                track.Child = fill;
+                Grid.SetRow(track, i);
+                _dist.Children.Add(track);
+                // 保留一点最小长度：0.2% 这种真实数据也要能看见一小截
+                Anim.Animate((ScaleTransform)fill.RenderTransform, ScaleTransform.ScaleXProperty,
+                    0, Math.Max(pct, 1.2) / 100.0, 520, 40 + i * 55, Anim.EaseOut());
             }
+        }
+
+        static Brush DistBarBrush()
+        {
+            var c = ((SolidColorBrush)DistBase).Color;
+            var g = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0.5),
+                EndPoint = new Point(1, 0.5)
+            };
+            g.GradientStops.Add(new GradientStop(Color.FromArgb(0xE6, c.R, c.G, c.B), 0));
+            g.GradientStops.Add(new GradientStop(Color.FromArgb(0x80, c.R, c.G, c.B), 1));
+            g.Freeze();
+            return g;
         }
 
         static Brush DistBrush(int index)
@@ -1059,15 +1435,89 @@ namespace DoubanNowPlaying
 
         void ClearDist()
         {
+            _distSig = null;
+            _dist.Visibility = Visibility.Collapsed;
             _dist.Children.Clear();
             _dist.ColumnDefinitions.Clear();
+            _dist.RowDefinitions.Clear();
         }
 
         void SetProgress(double ratio)
         {
+            if (_progressFill == null || _progressScale == null) return;
+            ratio = Math.Max(0, Math.Min(1, ratio));
             double w = _progressTrack.ActualWidth;
             if (w <= 0) w = 400;
-            _progressFill.Width = Math.Max(0, Math.Min(1, ratio)) * w;
+            if (Math.Abs(_progressFill.Width - w) > 0.5) _progressFill.Width = w;
+
+            double from = _progressInited ? _progressScale.ScaleX : 0;
+            if (!_progressInited)
+            {
+                _progressInited = true;
+                _progressScale.ScaleX = ratio;
+                return;
+            }
+            if (Math.Abs(ratio - from) < 0.004) return;
+            // 跳曲/拖动进度时直接落位，正常播放时用 900ms 匀速推进
+            if (ratio < from - 0.06 || Math.Abs(ratio - from) > 0.4)
+            {
+                Anim.AnimateLinear(_progressScale, ScaleTransform.ScaleXProperty, ratio, ratio, 1);
+                return;
+            }
+            Anim.AnimateLinear(_progressScale, ScaleTransform.ScaleXProperty, from, ratio, 900);
+        }
+
+        void SetMineVisible(bool visible)
+        {
+            if (_mineRow == null) return;
+            var target = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (_mineRow.Visibility == target) return;
+            _mineRow.Visibility = target;
+            if (visible) Anim.SlideIn(_mineRow, 7, 280, 40);
+        }
+
+        void UpdateCommentPlaceholder()
+        {
+            if (_commentPh == null) return;
+            bool empty = string.IsNullOrEmpty(_comment.Text);
+            if (empty)
+            {
+                if (_commentPh.Visibility != Visibility.Visible)
+                {
+                    _commentPh.Visibility = Visibility.Visible;
+                    Anim.FadeIn(_commentPh, 140, 0, 0);
+                }
+            }
+            else
+            {
+                _commentPh.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>「正在播放」的小圆点：呼吸 + 向外扩散的一圈波纹</summary>
+        void SetPulse(bool playing)
+        {
+            int state = playing ? 1 : 0;
+            if (state == _pulseState) return;
+            _pulseState = state;
+
+            if (_pulse != null) _pulse.Fill = playing ? Mint : PulseIdle;
+            if (_pulseRing != null) _pulseRing.Stroke = playing ? Mint : PulseIdle;
+
+            if (playing)
+            {
+                if (_pulseRing != null) Anim.RippleForever(_pulseRing, 2.6, 1700);
+                if (_pulse != null) Anim.PulseForever(_pulse, 1.22, 0.72, 1200);
+            }
+            else
+            {
+                if (_pulseRing != null)
+                {
+                    Anim.StopAnim(_pulseRing);
+                    _pulseRing.Opacity = 0;
+                }
+                if (_pulse != null) Anim.StopAnim(_pulse);
+            }
         }
 
         void SetMineEnabled(bool enabled)
@@ -1084,38 +1534,84 @@ namespace DoubanNowPlaying
             RefreshSyncVisual();
         }
 
+        /// <summary>顶栏状态文字：有内容时显示成小胶囊，空字符串时整块收起</summary>
+        void SetStatus(string text)
+        {
+            if (_status == null) return;
+            _status.Text = text;
+            if (_statusChip != null)
+                _statusChip.Visibility = string.IsNullOrEmpty(text)
+                    ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         /// <summary>同步按钮的四种状态：不可用 / 可提交 / 提交中 / 已同步</summary>
         void RefreshSyncVisual()
         {
+            if (_syncText == null || _btnSync == null) return;
+            bool wasSyncing = _wasSyncing;
+            bool wasSynced = _wasSynced;
+
             if (_syncing)
             {
-                _syncText.Text = "同步中…";
-                _btnSync.Background = Base;
+                _syncText.Text = "同步中";
+                _btnSync.Background = QuietFill;
                 _syncText.Foreground = Dim;
                 _btnSync.IsEnabled = false;
-                return;
-            }
-            if (!_syncEnabled)
-            {
-                _syncText.Text = "同步";
-                _btnSync.Background = Base;
-                _syncText.Foreground = Faint;
-                _btnSync.IsEnabled = false;
-                return;
-            }
-            if (_synced)
-            {
-                _syncText.Text = "已同步";
-                _btnSync.Background = Base;
-                _syncText.Foreground = Mint;
+                if (_syncCheck != null) _syncCheck.Visibility = Visibility.Collapsed;
+                if (_syncSpinner != null)
+                {
+                    _syncSpinner.Visibility = Visibility.Visible;
+                    if (!wasSyncing) Anim.RotateForever(_syncSpinner, 900);
+                }
             }
             else
             {
-                _syncText.Text = "同步";
-                _btnSync.Background = Accent;
-                _syncText.Foreground = OnAccent;
+                if (_syncSpinner != null)
+                {
+                    if (wasSyncing) Anim.StopRotate(_syncSpinner);
+                    _syncSpinner.Visibility = Visibility.Collapsed;
+                }
+
+                if (!_syncEnabled)
+                {
+                    _syncText.Text = "同步";
+                    _btnSync.Background = QuietFill;
+                    _syncText.Foreground = Faint;
+                    _btnSync.IsEnabled = false;
+                    if (_syncCheck != null) _syncCheck.Visibility = Visibility.Collapsed;
+                }
+                else if (_synced)
+                {
+                    _syncText.Text = "已同步";
+                    _btnSync.Background = Done;
+                    _syncText.Foreground = OnDone;
+                    _btnSync.IsEnabled = true;
+                    if (_syncCheck != null)
+                    {
+                        _syncCheck.Visibility = Visibility.Visible;
+                        _syncCheck.Stroke = OnDone;
+                        if (!wasSynced) Anim.Pop(_syncCheck, 0.35, 1.0, 340);
+                    }
+                }
+                else
+                {
+                    _syncText.Text = "同步";
+                    _btnSync.Background = Primary;
+                    _syncText.Foreground = OnPrimary;
+                    _btnSync.IsEnabled = true;
+                    if (_syncCheck != null) _syncCheck.Visibility = Visibility.Collapsed;
+                }
             }
-            _btnSync.IsEnabled = true;
+
+            if (_syncIconHost != null)
+            {
+                _syncIconHost.Visibility = (_syncing || (!_syncing && _syncEnabled && _synced))
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+
+            _wasSyncing = _syncing;
+            _wasSynced = _synced;
         }
 
         /* ------------------------------ 稍后再评 ------------------------------ */
@@ -1130,11 +1626,12 @@ namespace DoubanNowPlaying
         /// <summary>稍后再评按钮的三种状态：可保存 / 保存中 / 已在待评分里</summary>
         void SetLaterState(bool inTodo, bool busy)
         {
+            bool becameTodo = inTodo && !_inTodo;
             _inTodo = inTodo;
             _laterBusy = busy;
             if (_btnLater == null || _laterText == null) return;
 
-            _btnLater.Background = Subtle;
+            _btnLater.Background = QuietFill;
             if (busy)
             {
                 _laterText.Text = "保存中…";
@@ -1147,6 +1644,7 @@ namespace DoubanNowPlaying
             {
                 _laterText.Text = "已在待评";
                 _laterText.Foreground = Mint;
+                if (becameTodo) Anim.Pop(_btnLater, 0.96, 1.0, 280);
             }
             else
             {
@@ -1198,7 +1696,8 @@ namespace DoubanNowPlaying
         {
             if (!_subjectId.HasValue) return;
             _myRating = value;
-            PaintMyStars(value);
+            _paintedRating = value;
+            PaintMyStars(value, false, true);
             _synced = false; // 改了分就不再是「已同步」
             SetMineEnabled(true);
             await PostJsonAsync("/api/rating", new Dictionary<string, object>
@@ -1308,17 +1807,29 @@ namespace DoubanNowPlaying
 
         void ShowHint(string text, Brush color)
         {
+            if (_hintTimer != null) { _hintTimer.Stop(); _hintTimer = null; }
+            var token = new object();
+            _hintToken = token;
             _hint.Text = text;
             _hint.Foreground = color;
             _hint.Visibility = Visibility.Visible;
-            var t = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-            t.Tick += (s, e) =>
+            Anim.SlideIn(_hint, 8, 220, 0);
+
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3.2) };
+            _hintTimer = timer;
+            timer.Tick += (s, e) =>
             {
-                t.Stop();
-                _hint.Visibility = Visibility.Collapsed;
-                _hint.Foreground = Faint;
+                timer.Stop();
+                if (!ReferenceEquals(_hintTimer, timer)) return;
+                _hintTimer = null;
+                Anim.FadeOut(_hint, 180, () =>
+                {
+                    if (!ReferenceEquals(_hintToken, token)) return;
+                    _hint.Visibility = Visibility.Collapsed;
+                    _hint.Foreground = Dim;
+                });
             };
-            t.Start();
+            timer.Start();
         }
 
         void OpenManage()
@@ -1362,7 +1873,7 @@ namespace DoubanNowPlaying
   </ContextMenu.Resources>
   <ContextMenu.Template>
     <ControlTemplate TargetType='ContextMenu'>
-      <Border Background='{{BG}}' BorderBrush='{{BORDER}}' BorderThickness='1'
+      <Border x:Name='MenuRoot' Background='{{BG}}' BorderBrush='{{BORDER}}' BorderThickness='1'
               CornerRadius='16' Padding='6' Margin='12'>
         <Border.Effect>
           <DropShadowEffect Color='{{SHADOW}}' BlurRadius='22' ShadowDepth='7' Direction='315' Opacity='0.85' />
@@ -1417,6 +1928,8 @@ namespace DoubanNowPlaying
             menu.Opened += (s, e) =>
             {
                 miTop.Header = _win.Topmost ? "窗口置顶 ✓" : "窗口置顶";
+                var root = menu.Template.FindName("MenuRoot", menu) as FrameworkElement;
+                if (root != null) Anim.SlideIn(root, -6, 180, 0);
             };
             miZoomReset.Click += (s, e) =>
             {
@@ -1436,8 +1949,16 @@ namespace DoubanNowPlaying
             if (fe == null) return;
             var eff = fe.Effect as DropShadowEffect;
             if (eff == null) return;
-            el.MouseEnter += (s, e) => eff.BlurRadius = Math.Max(2, baseBlur * 0.5);
-            el.MouseLeave += (s, e) => eff.BlurRadius = baseBlur;
+            el.MouseEnter += (s, e) =>
+            {
+                Anim.Animate(eff, DropShadowEffect.BlurRadiusProperty,
+                    eff.BlurRadius, Math.Max(2, baseBlur * 0.5), 150, 0, Anim.EaseOut());
+            };
+            el.MouseLeave += (s, e) =>
+            {
+                Anim.Animate(eff, DropShadowEffect.BlurRadiusProperty,
+                    eff.BlurRadius, baseBlur, 180, 0, Anim.EaseOut());
+            };
         }
 
         /// <summary>child 是否在 parent 里面（用来判断点的是不是某个按钮）</summary>

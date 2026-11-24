@@ -17,12 +17,61 @@
     <SolidColorBrush x:Key="DimBrush" Color="#A9C0DC" />
     <SolidColorBrush x:Key="FaintBrush" Color="#6E8CB2" />
     <SolidColorBrush x:Key="ChampagneBrush" Color="#E4B863" />
+    <SolidColorBrush x:Key="ScrollThumb" Color="#33FFFFFF" />
+    <Style x:Key="SlimScrollBar" TargetType="ScrollBar">
+      <Setter Property="Width" Value="7" />
+      <Setter Property="MinWidth" Value="7" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ScrollBar">
+            <Grid Background="Transparent" Margin="1,2,1,2">
+              <Track x:Name="PART_Track" IsDirectionReversed="True" Orientation="Vertical">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Command="ScrollBar.PageUpCommand" Focusable="False">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.DecreaseRepeatButton>
+                <Track.Thumb>
+                  <Thumb>
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbBorder" CornerRadius="3" Background="{StaticResource ScrollThumb}" />
+                        <ControlTemplate.Triggers>
+                          <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Opacity" Value="0.7" />
+                          </Trigger>
+                        </ControlTemplate.Triggers>
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Command="ScrollBar.PageDownCommand" Focusable="False">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.IncreaseRepeatButton>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBar}" />
   </Window.Resources>
 
   <Grid Margin="20">
     <Grid>
       <Rectangle RadiusX="24" RadiusY="24" Fill="#0B1322" />
-      <Rectangle RadiusX="24" RadiusY="24">
+      <Rectangle x:Name="GlowA" RadiusX="24" RadiusY="24">
         <Rectangle.Fill>
           <RadialGradientBrush Center="0.9,0.0" GradientOrigin="0.9,0.0" RadiusX="0.9" RadiusY="1.1">
             <GradientStop Color="#8A33517A" Offset="0" />
@@ -30,7 +79,7 @@
           </RadialGradientBrush>
         </Rectangle.Fill>
       </Rectangle>
-      <Rectangle RadiusX="24" RadiusY="24">
+      <Rectangle x:Name="GlowB" RadiusX="24" RadiusY="24">
         <Rectangle.Fill>
           <RadialGradientBrush Center="0.05,1.0" GradientOrigin="0.05,1.0" RadiusX="0.8" RadiusY="0.9">
             <GradientStop Color="#4DE4B863" Offset="0" />
@@ -62,12 +111,19 @@
 
         <Border Grid.Row="1" x:Name="TabTrack" HorizontalAlignment="Left" Margin="0,0,0,20"
                 CornerRadius="16" Background="#0DFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" Padding="5">
+          <Grid x:Name="TabHost">
+            <Border x:Name="TabIndicator" CornerRadius="12" HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                    Width="0" Background="#14FFFFFF" IsHitTestVisible="False">
+              <Border.RenderTransform>
+                <TranslateTransform X="0" />
+              </Border.RenderTransform>
+            </Border>
           <StackPanel Orientation="Horizontal">
-            <Border x:Name="TabHistory" CornerRadius="12" Padding="18,8" Background="#14FFFFFF" Cursor="Hand">
+            <Border x:Name="TabHistory" CornerRadius="12" Padding="18,8" Background="Transparent" Cursor="Hand">
               <TextBlock x:Name="TabHistoryText" Text="收听史" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" />
             </Border>
             <Border x:Name="TabTodo" CornerRadius="12" Padding="18,8" Background="Transparent" Cursor="Hand">
-              <TextBlock x:Name="TabTodoText" Text="待评分" FontSize="13" FontWeight="SemiBold" Foreground="#7C9CC4" />
+              <TextBlock x:Name="TabTodoText" Text="待评分" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource DimBrush}" />
             </Border>
             <Border x:Name="TabBind" CornerRadius="12" Padding="18,8" Background="Transparent" Cursor="Hand">
               <TextBlock x:Name="TabBindText" Text="手动绑定" FontSize="13" FontWeight="SemiBold"
@@ -78,6 +134,7 @@
                          Foreground="{StaticResource DimBrush}" />
             </Border>
           </StackPanel>
+          </Grid>
         </Border>
 
         <Grid Grid.Row="2">
@@ -96,9 +153,14 @@
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
               <Border CornerRadius="14" Background="#0DFFFFFF" BorderBrush="#26FFFFFF" BorderThickness="1" Height="44">
-                <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0"
-                         Foreground="#FFFFFF" CaretBrush="#E4B863" FontSize="13"
-                         VerticalContentAlignment="Center" Padding="16,0" />
+                <Grid>
+                  <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0"
+                           Foreground="#FFFFFF" CaretBrush="#E4B863" FontSize="13"
+                           VerticalContentAlignment="Center" Padding="16,0" />
+                  <TextBlock x:Name="SearchPlaceholder" Text="搜专辑名或艺人" FontSize="13"
+                             Foreground="{StaticResource FaintBrush}" Margin="17,0,0,0"
+                             VerticalAlignment="Center" IsHitTestVisible="False" />
+                </Grid>
               </Border>
               <Border x:Name="BtnSearch" Grid.Column="1" CornerRadius="18" Background="#E4B863"
                       Height="44" Padding="24,0" Margin="12,0,0,0" Cursor="Hand">
@@ -107,7 +169,11 @@
               </Border>
             </Grid>
             <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="420">
-              <StackPanel x:Name="BindResults" />
+              <StackPanel x:Name="BindResults">
+                <TextBlock Text="搜专辑名或艺人，点「绑定」后，这张专辑以后就按你的选择走。"
+                           FontSize="12" Foreground="{StaticResource FaintBrush}" TextWrapping="Wrap"
+                           MaxWidth="560" Margin="4,16,0,0" HorizontalAlignment="Left" />
+              </StackPanel>
             </ScrollViewer>
           </StackPanel>
 
@@ -172,7 +238,7 @@
                 </StackPanel>
                 <TextBlock x:Name="DoubanStatus" HorizontalAlignment="Right" VerticalAlignment="Center"
                            Margin="0,0,8,0" MaxWidth="230" TextTrimming="CharacterEllipsis"
-                           FontSize="12" Foreground="{StaticResource FaintBrush}" Text="未绑定" />
+                           FontSize="12" Foreground="{StaticResource DimBrush}" Text="未绑定" />
               </Grid>
 
               <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
@@ -192,7 +258,7 @@
                          AcceptsReturn="True" TextWrapping="Wrap" Padding="14,10"
                          VerticalScrollBarVisibility="Auto" />
               </Border>
-              <TextBlock FontSize="12" Foreground="{StaticResource FaintBrush}" Margin="2,12,0,0"
+              <TextBlock FontSize="12" Foreground="{StaticResource DimBrush}" Margin="2,12,0,0"
                          TextWrapping="Wrap" LineHeight="22"
                          Text="① 点「打开豆瓣」用默认浏览器打开豆瓣，登录后按 F12 → 网络(Network) → 刷新页面 → 点任意 douban.com 请求 → 标头(Headers) → 请求标头里的 Cookie，右键「复制值」。② 回到这里点「从剪贴板读取」。" />
               <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
